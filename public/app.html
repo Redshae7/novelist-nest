@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Novelist Nest</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--sf:#141420;--sf2:#1c1c2e;--bd:#2a2a3e;--t1:#e8e6e1;--t2:#8b8999;--ac:#c4956a;--ac2:#8b6f4e;--gw:rgba(196,149,106,0.12);--ok:#4a9e6e;--er:#c45a5a}
+body{background:var(--bg);color:var(--t1);font-family:'Crimson Pro',Georgia,serif;min-height:100dvh}
+input,textarea,button,select{font-family:'Crimson Pro',Georgia,serif}
+a{color:var(--ac)}
+
+/* LAYOUT */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--sf);position:sticky;top:0;z-index:50;gap:8px}
+.logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--ac);white-space:nowrap;cursor:pointer}
+.logo small{color:var(--t2);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;display:block;font-family:'Crimson Pro',serif}
+.phases{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.phases::-webkit-scrollbar{display:none}
+.ph{padding:6px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-size:12px;white-space:nowrap;transition:all .2s}
+.ph.on{border-color:var(--ac);background:var(--gw);color:var(--ac);font-weight:600}
+.ph.locked{opacity:.4;cursor:not-allowed}
+.layout{display:flex;height:calc(100dvh - 56px)}
+@media(max-width:768px){.layout{flex-direction:column;height:auto;min-height:calc(100dvh - 56px)}}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-width:240px;border-right:1px solid var(--bd);background:var(--sf);padding:16px;overflow-y:auto}
+@media(max-width:768px){.sidebar{display:none}}
+.sb-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t2);margin-bottom:8px}
+.sb-input{width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--t1);font-size:13px;outline:none;margin-bottom:8px}
+.sb-row{display:flex;gap:6px}
+.sb-row .sb-input:last-child{width:40px;text-align:center;flex-shrink:0}
+.sb-row .sb-input:first-child{flex:1}
+.sb-ch{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:1px solid transparent;color:var(--t2);cursor:pointer;font-size:12px;margin-bottom:2px;text-align:left;width:100%;background:transparent}
+.sb-ch:hover,.sb-ch.on{border-color:var(--ac);color:var(--ac);background:var(--gw)}
+.sb-ch .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-ch .dot.done{background:var(--ok)}
+.sb-ch .dot.todo{background:var(--bd)}
+.sb-ch .dot.locked{background:var(--er);opacity:.4}
+.sb-progress{margin-top:12px;padding:10px;background:var(--sf2);border-radius:8px}
+.sb-progress .bar-bg{height:4px;background:var(--bd);border-radius:2px;margin-top:6px}
+.sb-progress .bar-fill{height:100%;background:var(--ac);border-radius:2px;transition:width .5s}
+
+/* MAIN */
+.main{flex:1;padding:20px;overflow-y:auto}
+@media(max-width:768px){.main{padding:16px}}
+.panel{display:none;max-width:720px;margin:0 auto}
+.panel.show{display:block}
+h2{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,28px);font-weight:800;margin-bottom:6px}
+.sub{color:var(--t2);font-size:14px;margin-bottom:20px}
+
+/* COMPONENTS */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:20px;margin-bottom:14px}
+.lb{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t2);margin-bottom:8px;display:block}
+.inp{width:100%;padding:10px 14px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);color:var(--t1);font-size:14px;outline:none}
+textarea.inp{min-height:100px;resize:vertical;line-height:1.6}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-size:12px;transition:all .15s}
+.tag.on{border-color:var(--ac);background:var(--gw);color:var(--ac);font-weight:600}
+.btn{padding:12px 24px;border-radius:8px;background:var(--ac);color:#fff;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+.btn:hover{background:var(--ac2)}.btn:disabled{opacity:.5;cursor:default}
+.btn-sm{padding:6px 14px;font-size:11px}
+.btn-full{width:100%}
+.btn-o{background:transparent;border:1px solid var(--bd);color:var(--t2)}
+.btn-o:hover{border-color:var(--ac);color:var(--ac)}
+.btn-success{background:var(--ok);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.grid2{grid-template-columns:1fr}}
+.len-btn{display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px}
+.len-btn b{display:block}.len-btn span{font-size:11px;opacity:.6}
+.chapter-text{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:24px;white-space:pre-wrap;font-size:15px;line-height:1.85;max-height:600px;overflow-y:auto;margin-top:12px}
+.ol-item{display:flex;gap:12px;align-items:flex-start}
+.ol-num{width:34px;height:34px;border-radius:50%;background:var(--gw);border:1px solid var(--ac);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--ac);flex-shrink:0}
+.ol-body{flex:1}.ol-body h4{font-size:15px;font-weight:600;margin-bottom:4px}
+.ol-body p{font-size:13px;color:var(--t2);line-height:1.5}
+.head-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.sep{height:1px;background:var(--bd);margin:14px 0}
+.fr{display:flex;justify-content:flex-end;margin-top:16px}
+.notify{position:fixed;top:16px;right:16px;z-index:200;background:var(--ac);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.3);display:none}
+.notify.show{display:block}
+.kw{display:inline-block;padding:3px 10px;border-radius:16px;background:var(--gw);border:1px solid var(--ac);color:var(--ac);font-size:11px;margin:2px}
+.chk{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:var(--t2)}
+.chk input[type=checkbox]{accent-color:var(--ac);width:16px;height:16px}
+.cl-title{font-weight:600;font-size:13px;color:var(--ac);margin-bottom:6px}
+.cl-section{margin-bottom:14px}
+.plat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.plat-row span:last-child{margin-left:auto;color:var(--ac)}
+
+/* UPGRADE PROMPT */
+.upgrade-card{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--ac);border-radius:14px;padding:32px;text-align:center;margin:20px 0}
+.upgrade-card h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--ac);margin-bottom:8px}
+.upgrade-card p{color:var(--t2);font-size:14px;margin-bottom:20px;line-height:1.6}
+.upgrade-card .price{font-family:'Playfair Display',serif;font-size:36px;font-weight:800;color:var(--t1);margin-bottom:4px}
+.upgrade-card .price-sub{font-size:13px;color:var(--t2);margin-bottom:16px}
+
+/* COMPLETION SCREEN */
+.complete-screen{text-align:center;padding:40px 20px}
+.complete-screen .trophy{font-size:72px;margin-bottom:16px}
+.complete-screen h2{font-size:32px;margin-bottom:12px;color:var(--ac)}
+.complete-screen p{color:var(--t2);font-size:16px;line-height:1.6;max-width:500px;margin:0 auto 24px}
+
+/* BETA GATE */
+.beta-gate{display:flex;align-items:center;justify-content:center;min-height:100dvh;padding:20px}
+.beta-box{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:48px 40px;text-align:center;max-width:420px;width:100%}
+.beta-box h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--ac);margin-bottom:8px}
+.beta-box p{color:var(--t2);font-size:14px;margin-bottom:24px;line-height:1.6}
+.beta-box input{width:100%;padding:14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--t1);font-size:16px;text-align:center;outline:none;margin-bottom:12px;letter-spacing:2px}
+.beta-box .err{color:var(--er);font-size:13px;margin-bottom:12px;min-height:18px}
+.beta-badge{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--gw);border:1px solid var(--ac);color:var(--ac);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+
+/* GENERATION OVERLAY */
+.gen-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,15,0.88);backdrop-filter:blur(10px);z-index:100;align-items:center;justify-content:center;flex-direction:column}
+.gen-overlay.show{display:flex}
+.gen-quill{font-size:48px;margin-bottom:20px;animation:quillAnim 2s ease-in-out infinite}
+@keyframes quillAnim{
+  0%,100%{transform:translateX(0) rotate(0deg)}
+  25%{transform:translateX(10px) rotate(4deg)}
+  50%{transform:translateX(20px) rotate(0deg)}
+  75%{transform:translateX(10px) rotate(-4deg)}
+}
+.gen-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--ac);margin-bottom:6px}
+.gen-step{font-size:14px;color:var(--t2);margin-bottom:16px;min-height:20px;transition:opacity .3s}
+.gen-bar-wrap{width:260px;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
+.gen-bar{height:100%;background:linear-gradient(90deg,var(--ac2),var(--ac));border-radius:2px;transition:width .6s ease;width:0%}
+.gen-dots{display:flex;gap:6px;margin-top:14px}
+.gen-dots span{width:5px;height:5px;border-radius:50%;background:var(--ac);opacity:.3;animation:dp 1.2s ease-in-out infinite}
+.gen-dots span:nth-child(2){animation-delay:.2s}
+.gen-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+
+/* LEGAL */
+.legal{max-width:660px;margin:0 auto;padding:20px;font-size:14px;line-height:1.7;color:var(--t2)}
+.legal h2{color:var(--t1);margin-bottom:16px}.legal h3{color:var(--t1);margin:16px 0 8px;font-size:16px}
+.legal p{margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="notify" id="notify"></div>
+<div class="gen-overlay" id="gen-overlay">
+  <div class="gen-quill">✍️</div>
+  <div class="gen-title" id="gen-title">Writing in Progress</div>
+  <div class="gen-step" id="gen-step">Preparing...</div>
+  <div class="gen-bar-wrap"><div class="gen-bar" id="gen-bar"></div></div>
+  <div class="gen-dots"><span></span><span></span><span></span></div>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ===== CONFIG =====
+const FREE_CHAPTER_LIMIT = 1;
+const PAID_CHAPTER_LIMIT = 25;
+
+// ===== STATE =====
+let betaAccess = localStorage.getItem("nn_beta") === "1";
+let isPaid = localStorage.getItem("nn_paid") === "1";
+let tosAccepted = localStorage.getItem("nn_tos") === "1.0";
+let paymentChecked = false;
+let paymentVerifying = false;
+let phase = "idea", genre = "", tone = "", length = null, heat = "";
+let outline = [], activeChapter = null, keywords = [];
+let chapterTexts = {};
+let bookComplete = false;
+let currentView = "app"; // app | legal-tos | legal-privacy | payment-processing | tos-gate
+
+const GENRES = ["Fiction","Non-Fiction","Romance","Thriller","Sci-Fi","Fantasy","Children's","Self-Help","Memoir"];
+const TONES = ["Literary","Conversational","Dark","Humorous","Inspirational","Suspenseful","Romantic"];
+const LENGTHS = [{l:"Novella",w:"20K-35K",c:"10-15"},{l:"Standard Novel",w:"40K-60K",c:"18-25"},{l:"Full Novel",w:"65K-90K",c:"25-35"}];
+const HEATS = ["Clean","Warm","Spicy","Steamy"];
+
+// ===== PAYMENT FUNCTIONS =====
+async function startCheckout() {
+  try {
+    const r = await fetch("/api/create-checkout", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({})
+    });
+    const d = await r.json();
+    if (d.url) {
+      window.location.href = d.url; // Redirect to Stripe (same tab, so they come back)
+    } else {
+      notify("Error creating checkout: " + (d.error || "Unknown"));
+    }
+  } catch(e) { notify("Checkout error: " + e.message); }
+}
+
+async function verifyPayment(sessionId) {
+  paymentVerifying = true;
+  currentView = "payment-processing";
+  render();
+  try {
+    const r = await fetch("/api/verify-payment", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ action: "verify", sessionId })
+    });
+    const d = await r.json();
+    if (d.paid) {
+      isPaid = true;
+      localStorage.setItem("nn_paid", "1");
+      paymentChecked = true;
+      paymentVerifying = false;
+      currentView = "payment-success";
+      window.history.replaceState({}, "", "/app.html");
+      render();
+    } else if (d.status === "pending") {
+      // Payment still processing — retry in 3 seconds
+      setTimeout(() => verifyPayment(sessionId), 3000);
+    } else {
+      paymentVerifying = false;
+      currentView = "app";
+      window.history.replaceState({}, "", "/app.html");
+      render();
+      notify("Payment not confirmed. If you completed payment, try refreshing.");
+    }
+  } catch(e) {
+    paymentVerifying = false;
+    currentView = "app";
+    render();
+    notify("Verification error. Try refreshing the page.");
+  }
+}
+
+async function checkPaymentStatus() {
+  if (paymentChecked) return;
+  try {
+    const r = await fetch("/api/verify-payment", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ action: "check-status" })
+    });
+    const d = await r.json();
+    if (d.paid) {
+      isPaid = true;
+      localStorage.setItem("nn_paid", "1");
+    }
+    paymentChecked = true;
+  } catch(e) { paymentChecked = true; }
+}
+
+// ===== TOS FUNCTIONS =====
+async function checkTosStatus() {
+  try {
+    const r = await fetch("/api/ai", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ action: "tos-check" })
+    });
+    const d = await r.json();
+    if (d.accepted) {
+      tosAccepted = true;
+      localStorage.setItem("nn_tos", d.tosVersion);
+    } else {
+      tosAccepted = false;
+      localStorage.removeItem("nn_tos");
+    }
+  } catch(e) {
+    // If check fails and we have local acceptance, trust it temporarily
+  }
+}
+
+async function acceptTos() {
+  try {
+    const r = await fetch("/api/ai", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ action: "tos-accept", tosVersion: "1.0", privacyVersion: "1.0" })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      tosAccepted = true;
+      localStorage.setItem("nn_tos", "1.0");
+      currentView = "app";
+      render();
+      notify("Terms accepted. Welcome to Novelist Nest!");
+      return true;
+    } else {
+      notify("Error saving acceptance. Please try again.");
+      return false;
+    }
+  } catch(e) {
+    notify("Connection error. Please try again.");
+    return false;
+  }
+}
+
+// ===== ON PAGE LOAD: check URL for payment return =====
+(async function initPayment() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("payment") === "success" && params.get("session_id")) {
+    await verifyPayment(params.get("session_id"));
+  } else if (params.get("payment") === "cancelled") {
+    window.history.replaceState({}, "", "/app.html");
+    notify("Payment cancelled. You can upgrade anytime.");
+  } else {
+    // Background checks
+    await checkPaymentStatus();
+    if (betaAccess) await checkTosStatus();
+    render();
+  }
+})()
+
+// ===== RENDER ROUTER =====
+function render() {
+  if (currentView === "payment-processing") { renderPaymentProcessing(); return; }
+  if (currentView === "payment-success") { renderPaymentSuccess(); return; }
+  if (currentView === "legal-tos") { renderLegalTOS(); return; }
+  if (currentView === "legal-privacy") { renderLegalPrivacy(); return; }
+  if (!betaAccess) { renderBetaGate(); return; }
+  if (!tosAccepted) { renderTosGate(); return; }
+  renderApp();
+}
+
+function renderPaymentProcessing() {
+  document.getElementById("app").innerHTML = `
+  <div class="beta-gate">
+    <div class="beta-box" style="max-width:440px">
+      <div style="font-size:40px;text-align:center;margin-bottom:12px">✨</div>
+      <h1 style="font-size:22px">Processing Your Payment</h1>
+      <p>We're confirming your Book Pass purchase with Stripe. This usually takes 2–5 seconds.</p>
+      <div class="gen-bar-wrap" style="width:220px;margin:16px auto"><div class="gen-bar" style="width:60%;animation:pulse 1.5s ease-in-out infinite"></div></div>
+      <style>@keyframes pulse{0%,100%{width:40%}50%{width:80%}}</style>
+      <div id="pay-status" style="font-size:13px;color:var(--t2);margin-top:12px">Verifying with Stripe...</div>
+      <div id="pay-retry" style="display:none;margin-top:16px">
+        <p style="font-size:13px;color:var(--t2);margin-bottom:12px">Taking longer than expected. Your payment may still be processing.</p>
+        <button class="btn" onclick="location.reload()" style="margin-right:8px">↻ Check Again</button>
+        <button class="btn btn-o" onclick="currentView='app';render()">Go to App</button>
+      </div>
+    </div>
+  </div>`;
+  // Show retry after 15 seconds
+  setTimeout(() => {
+    const el = document.getElementById("pay-retry");
+    const st = document.getElementById("pay-status");
+    if (el) el.style.display = "block";
+    if (st) st.textContent = "Still waiting for confirmation...";
+  }, 15000);
+}
+
+function renderPaymentSuccess() {
+  // Figure out the best next action
+  const hasOutline = outline.length > 0;
+  const writtenCount = Object.keys(chapterTexts).length;
+  const nextChapter = hasOutline ? outline.find(ch => !chapterTexts[ch.number]) : null;
+
+  let nextActionHTML = "";
+  if (nextChapter) {
+    nextActionHTML = `
+      <p style="color:var(--t2);font-size:14px;margin-bottom:16px">All ${outline.length} chapters are now unlocked. Pick up right where you left off.</p>
+      <button class="btn" onclick="currentView='app';selectChapter(${nextChapter.number})" style="padding:16px 40px;font-size:16px">
+        Write Chapter ${nextChapter.number} →
+      </button>`;
+  } else if (hasOutline) {
+    nextActionHTML = `
+      <p style="color:var(--t2);font-size:14px;margin-bottom:16px">All chapters unlocked. Continue writing your book.</p>
+      <button class="btn" onclick="currentView='app';phase='write';render()" style="padding:16px 40px;font-size:16px">
+        Continue Writing →
+      </button>`;
+  } else {
+    nextActionHTML = `
+      <p style="color:var(--t2);font-size:14px;margin-bottom:16px">Your Book Pass is active. Start creating your book now.</p>
+      <button class="btn" onclick="currentView='app';phase='idea';render()" style="padding:16px 40px;font-size:16px">
+        Start Your Book →
+      </button>`;
+  }
+
+  document.getElementById("app").innerHTML = `
+  <div class="beta-gate">
+    <div class="beta-box" style="max-width:460px">
+      <div style="font-size:56px;margin-bottom:16px">🎉</div>
+      <h1 style="font-size:26px;color:var(--ac)">Payment Confirmed!</h1>
+      <p style="font-size:16px;margin-bottom:8px">Your <strong>Book Pass</strong> is now active.</p>
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 20px;background:var(--gw);border:1px solid var(--ac);border-radius:8px;margin-bottom:20px">
+        <span style="color:var(--ok);font-size:18px">✓</span>
+        <span style="color:var(--ac);font-size:14px;font-weight:600">Up to 25 chapters unlocked</span>
+      </div>
+      ${nextActionHTML}
+      <div style="margin-top:16px">
+        <button class="btn btn-o btn-sm" onclick="currentView='app';render()">Go to Dashboard</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ===== BETA GATE =====
+function renderBetaGate() {
+  document.getElementById("app").innerHTML = `
+  <div class="beta-gate">
+    <div class="beta-box">
+      <div class="beta-badge">Private Beta</div>
+      <h1>Novelist Nest</h1>
+      <p>This app is currently in private beta. Enter your access code to continue.</p>
+      <input id="beta-pw" type="password" placeholder="Access Code" autocomplete="off">
+      <div class="err" id="beta-err"></div>
+      <button class="btn btn-full" id="beta-go">Enter Beta</button>
+      <div style="margin-top:16px;font-size:12px;color:var(--t2)">
+        <a href="#" onclick="currentView='legal-tos';render();return false">Terms</a> · 
+        <a href="#" onclick="currentView='legal-privacy';render();return false">Privacy</a>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("beta-go").onclick = async () => {
+    const pw = document.getElementById("beta-pw").value;
+    if (!pw) { document.getElementById("beta-err").textContent = "Enter your code"; return; }
+    document.getElementById("beta-go").disabled = true;
+    document.getElementById("beta-go").textContent = "Checking...";
+    try {
+      const r = await fetch("/api/ai", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ action: "beta-login", password: pw })});
+      const d = await r.json();
+      if (d.ok) { betaAccess = true; localStorage.setItem("nn_beta", "1"); await checkTosStatus(); render(); }
+      else { document.getElementById("beta-err").textContent = d.error || "Invalid code"; }
+    } catch(e) { document.getElementById("beta-err").textContent = "Connection error"; }
+    document.getElementById("beta-go").disabled = false;
+    document.getElementById("beta-go").textContent = "Enter Beta";
+  };
+  document.getElementById("beta-pw").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("beta-go").click(); });
+}
+
+// ===== TOS GATE =====
+function renderTosGate() {
+  document.getElementById("app").innerHTML = `
+  <div class="beta-gate">
+    <div class="beta-box" style="max-width:480px">
+      <div style="font-size:36px;margin-bottom:12px">📜</div>
+      <h1 style="font-size:24px">Before You Begin</h1>
+      <p>Please review and accept our terms to continue using Novelist Nest.</p>
+      
+      <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:left;margin-bottom:16px;max-height:200px;overflow-y:auto;font-size:13px;color:var(--t2);line-height:1.6">
+        <p style="margin-bottom:8px"><strong style="color:var(--t1)">Key points:</strong></p>
+        <p style="margin-bottom:6px">• Content is generated by AI. You are responsible for reviewing all content before publishing.</p>
+        <p style="margin-bottom:6px">• Generated content is yours, but may contain similarities to other works. You ensure it doesn't infringe on others' rights.</p>
+        <p style="margin-bottom:6px">• Usage is subject to rate limits and fair-use policies.</p>
+        <p style="margin-bottom:6px">• Purchases are non-refundable once content has been generated.</p>
+        <p style="margin-bottom:6px">• The service is provided "as is" with no guarantees.</p>
+        <p>• We may suspend access for policy violations.</p>
+      </div>
+
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;text-align:left;padding:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:16px">
+        <input type="checkbox" id="tos-check" style="accent-color:var(--ac);width:18px;height:18px;margin-top:2px;flex-shrink:0">
+        <span style="font-size:13px;color:var(--t2);line-height:1.5">I have read and agree to the <a href="#" onclick="currentView='legal-tos';render();return false" style="color:var(--ac);text-decoration:underline">Terms of Service</a> and <a href="#" onclick="currentView='legal-privacy';render();return false" style="color:var(--ac);text-decoration:underline">Privacy Policy</a></span>
+      </label>
+
+      <button class="btn btn-full" id="tos-go" disabled style="opacity:0.5">Accept & Continue</button>
+      <p style="font-size:11px;color:var(--t2);margin-top:12px">Terms v1.0 · Privacy v1.0</p>
+    </div>
+  </div>`;
+
+  const checkbox = document.getElementById("tos-check");
+  const btn = document.getElementById("tos-go");
+  
+  checkbox.addEventListener("change", () => {
+    btn.disabled = !checkbox.checked;
+    btn.style.opacity = checkbox.checked ? "1" : "0.5";
+  });
+
+  btn.onclick = async () => {
+    if (!checkbox.checked) return;
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    const ok = await acceptTos();
+    if (!ok) {
+      btn.disabled = false;
+      btn.textContent = "Accept & Continue";
+    }
+  };
+}
+
+// ===== MAIN APP =====
+function renderApp() {
+  const writtenCount = Object.keys(chapterTexts).length;
+  const totalCh = outline.length || 0;
+  const maxCh = isPaid ? PAID_CHAPTER_LIMIT : FREE_CHAPTER_LIMIT;
+
+  let chaptersHTML = "";
+  if (outline.length) {
+    chaptersHTML = outline.map(ch => {
+      const done = !!chapterTexts[ch.number];
+      const locked = !isPaid && ch.number > FREE_CHAPTER_LIMIT && !done;
+      const cls = activeChapter === ch.number ? " on" : "";
+      const dotCls = done ? "done" : locked ? "locked" : "todo";
+      return `<button class="sb-ch${cls}" onclick="selectChapter(${ch.number})"><span class="dot ${dotCls}"></span>${ch.number}. ${ch.title}</button>`;
+    }).join("");
+  } else {
+    chaptersHTML = '<div style="font-size:12px;color:var(--t2);font-style:italic;text-align:center;padding:16px 0">Generate outline first</div>';
+  }
+
+  const progressPct = totalCh ? Math.round((writtenCount / totalCh) * 100) : 0;
+
+  document.getElementById("app").innerHTML = `
+  <div class="topbar">
+    <div class="logo" onclick="currentView='app';render()">Novelist Nest<small>Write. Format. Publish.</small></div>
+    <div class="phases" id="phases">
+      ${["idea","outline","write","format","publish"].map((p,i) => {
+        const on = phase === p ? " on" : "";
+        return `<button class="ph${on}" data-phase="${p}" onclick="switchPhase('${p}')">${i+1}. ${p[0].toUpperCase()+p.slice(1)}</button>`;
+      }).join("")}
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sb-label">Project</div>
+      <input class="sb-input" id="sb-title" placeholder="Book Title" value="${escH(getSaved('title'))}">
+      <input class="sb-input" id="sb-author" placeholder="Author Name" value="${escH(getSaved('author'))}">
+      <div class="sb-row"><input class="sb-input" id="sb-series" placeholder="Series" value="${escH(getSaved('series'))}"><input class="sb-input" id="sb-seriesnum" placeholder="#" value="${escH(getSaved('seriesnum'))}"></div>
+      <div class="sep"></div>
+      <div class="sb-label">Chapters (${writtenCount}/${totalCh})</div>
+      ${chaptersHTML}
+      ${totalCh ? `<div class="sb-progress"><div style="font-size:11px;color:var(--t2)">${progressPct}% complete</div><div class="bar-bg"><div class="bar-fill" style="width:${progressPct}%"></div></div></div>` : ""}
+      <div style="margin-top:16px;font-size:11px;color:var(--t2)">
+        ${isPaid ? '<span style="color:var(--ok)">✓ Book Pass Active</span>' : `Free · <a href="#" onclick="startCheckout();return false">Upgrade</a>`}
+      </div>
+    </div>
+    <div class="main" id="main-content"></div>
+  </div>`;
+
+  // Render active panel into main-content
+  renderPanel();
+}
+
+function renderPanel() {
+  const el = document.getElementById("main-content");
+  if (!el) return;
+
+  if (phase === "idea") renderIdea(el);
+  else if (phase === "outline") renderOutline(el);
+  else if (phase === "write") renderWrite(el);
+  else if (phase === "format") renderFormat(el);
+  else if (phase === "publish") renderPublish(el);
+}
+
+function switchPhase(p) { phase = p; renderPanel(); document.querySelectorAll(".ph").forEach(b => b.classList.toggle("on", b.dataset.phase === p)); }
+function getSaved(k) { return localStorage.getItem("nn_" + k) || ""; }
+function saveSide() {
+  ["title","author","series","seriesnum"].forEach(k => {
+    const el = document.getElementById("sb-" + k);
+    if (el) localStorage.setItem("nn_" + k, el.value);
+  });
+}
+function escH(s) { return (s||"").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+function notify(msg) { const el = document.getElementById("notify"); el.textContent = msg; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 4000); }
+function showGen(t,s,p) { document.getElementById("gen-overlay").classList.add("show"); document.getElementById("gen-title").textContent = t||""; document.getElementById("gen-step").textContent = s||""; document.getElementById("gen-bar").style.width = (p||0)+"%"; }
+function updateGen(s,p) { document.getElementById("gen-step").textContent = s; document.getElementById("gen-bar").style.width = p+"%"; }
+function hideGen() { document.getElementById("gen-overlay").classList.remove("show"); }
+
+// ===== API =====
+async function callAI(prompt, sys, maxTok, type) {
+  const r = await fetch("/api/ai", { method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTok||1000, system: sys||"You are a professional book writing assistant.", messages: [{role:"user",content:prompt}], _type: type||"chapter" })
+  });
+  if (!r.ok) {
+    let msg = "Error " + r.status;
+    try { const e = await r.json(); if (e.error === "beta-required") { betaAccess = false; localStorage.removeItem("nn_beta"); render(); throw new Error("Beta session expired"); } if (e.error === "tos-required") { tosAccepted = false; localStorage.removeItem("nn_tos"); render(); throw new Error("Please accept Terms of Service first"); } msg = e.error || msg; if (e.hint) msg += " — " + e.hint; } catch(ex) { if (ex.message.includes("Beta") || ex.message.includes("Terms")) throw ex; }
+    throw new Error(msg);
+  }
+  return (await r.json()).content?.map(i => i.text||"").join("\n") || "";
+}
+
+// ===== IDEA PANEL =====
+function renderIdea(el) {
+  el.innerHTML = `
+  <div style="max-width:660px;margin:0 auto">
+    <h2>Start with an idea.</h2><p class="sub">Tell us your book concept.</p>
+    <div class="card"><span class="lb">Your Book Premise</span><textarea class="inp" id="f-premise" placeholder="Describe your book idea...">${escH(localStorage.getItem("nn_premise")||"")}</textarea></div>
+    <div class="grid2">
+      <div class="card"><span class="lb">Genre</span><div class="tags" id="f-genre"></div></div>
+      <div class="card"><span class="lb">Tone</span><div class="tags" id="f-tone"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><span class="lb">Length</span><div id="f-length"></div></div>
+      <div class="card"><span class="lb">Heat Level</span><div id="f-heat"></div></div>
+    </div>
+    <div class="fr"><button class="btn" onclick="savePremise();switchPhase('outline');render()">Continue to Outline →</button></div>
+  </div>`;
+  buildTags("f-genre", GENRES, v => genre = v, genre);
+  buildTags("f-tone", TONES, v => tone = v, tone);
+  buildLengths(); buildHeats();
+}
+
+function savePremise() {
+  const el = document.getElementById("f-premise");
+  if (el) localStorage.setItem("nn_premise", el.value);
+  saveSide();
+}
+
+function buildTags(id, items, setter, current) {
+  const el = document.getElementById(id); if (!el) return;
+  items.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "tag" + (current === item ? " on" : "");
+    btn.textContent = item;
+    btn.onclick = () => { setter(item); el.querySelectorAll(".tag").forEach(b => b.classList.toggle("on", b.textContent === item)); };
+    el.appendChild(btn);
+  });
+}
+function buildLengths() {
+  const el = document.getElementById("f-length"); if (!el) return;
+  LENGTHS.forEach(l => {
+    const btn = document.createElement("button");
+    btn.className = "tag len-btn" + (length?.l === l.l ? " on" : "");
+    btn.innerHTML = "<b>"+l.l+"</b><span>"+l.w+"</span>";
+    btn.onclick = () => { length = l; el.querySelectorAll(".tag").forEach(b => b.classList.remove("on")); btn.classList.add("on"); };
+    el.appendChild(btn);
+  });
+}
+function buildHeats() {
+  const el = document.getElementById("f-heat"); if (!el) return;
+  HEATS.forEach((h,i) => {
+    const btn = document.createElement("button");
+    btn.className = "tag len-btn" + (heat === h ? " on" : "");
+    btn.textContent = "🔥".repeat(i+1)+" "+h;
+    btn.onclick = () => { heat = h; el.querySelectorAll(".tag").forEach(b => b.classList.remove("on")); btn.classList.add("on"); };
+    el.appendChild(btn);
+  });
+}
+
+// ===== OUTLINE PANEL =====
+function renderOutline(el) {
+  el.innerHTML = `
+  <div style="max-width:720px;margin:0 auto">
+    <div class="head-row"><div><h2>Chapter Outline</h2><p class="sub" style="margin:0">${outline.length} chapters</p></div>
+    <button class="btn" id="btn-gen-outline">✨ Generate Outline</button></div>
+    <div id="ol-list"></div>
+  </div>`;
+  document.getElementById("btn-gen-outline").onclick = generateOutline;
+  renderOutlineList();
+}
+
+function renderOutlineList() {
+  const el = document.getElementById("ol-list"); if (!el) return;
+  el.innerHTML = "";
+  outline.forEach(ch => {
+    const d = document.createElement("div"); d.className = "card";
+    d.innerHTML = `<div class="ol-item"><div class="ol-num">${ch.number}</div><div class="ol-body"><h4>${ch.title}</h4><p>${ch.summary}</p></div><button class="btn btn-o btn-sm" style="flex-shrink:0">Write →</button></div>`;
+    d.querySelector("button").onclick = () => selectChapter(ch.number);
+    el.appendChild(d);
+  });
+}
+
+async function generateOutline() {
+  saveSide(); savePremise();
+  const title = document.getElementById("sb-title")?.value || "Untitled";
+  const premise = localStorage.getItem("nn_premise") || "";
+  if (!premise) { notify("Enter a premise first"); return; }
+  document.getElementById("btn-gen-outline").disabled = true;
+  showGen("Crafting Your Outline", "Planning chapter structure...", 15);
+  try {
+    const r = await callAI(`Create a chapter outline for: Title: ${title}, Genre: ${genre}, Tone: ${tone}, Length: ${length?.l||"Standard"} (${length?.c||"20"} chapters), Heat: ${heat}, Premise: ${premise}. For each chapter: number, title, 2-sentence summary. Return ONLY valid JSON: [{"number":1,"title":"...","summary":"..."}]`, "Return only valid JSON array.", 1200, "outline");
+    updateGen("Organizing chapters...", 80);
+    outline = JSON.parse(r.replace(/```json|```/g,"").trim());
+    updateGen("Done!", 100);
+    setTimeout(() => { hideGen(); render(); }, 500);
+    notify("Outline generated — " + outline.length + " chapters!");
+  } catch(e) { hideGen(); notify("Error: " + e.message); }
+  const btn = document.getElementById("btn-gen-outline"); if(btn) btn.disabled = false;
+}
+
+// ===== WRITE PANEL =====
+function selectChapter(n) { activeChapter = n; phase = "write"; render(); }
+
+function renderWrite(el) {
+  const ch = outline.find(c => c.number === activeChapter);
+  const maxCh = isPaid ? PAID_CHAPTER_LIMIT : FREE_CHAPTER_LIMIT;
+  const isLocked = !isPaid && activeChapter > FREE_CHAPTER_LIMIT && !chapterTexts[activeChapter];
+  const hasText = !!chapterTexts[activeChapter];
+  const writtenCount = Object.keys(chapterTexts).length;
+  const allDone = outline.length > 0 && writtenCount === outline.length;
+
+  let content = "";
+  if (!ch) {
+    // Smart guidance based on state
+    const firstUnwritten = outline.find(c => !chapterTexts[c.number]);
+    const hasAnyOutline = outline.length > 0;
+    if (hasAnyOutline && firstUnwritten) {
+      content = `<div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:36px;margin-bottom:12px">✍️</div>
+        <h3 style="margin-bottom:8px">Ready to write?</h3>
+        <p style="color:var(--t2);margin-bottom:16px">${writtenCount} of ${outline.length} chapters complete. Continue with the next one.</p>
+        <button class="btn" onclick="selectChapter(${firstUnwritten.number})" style="padding:14px 32px">Write Chapter ${firstUnwritten.number}: ${escH(firstUnwritten.title)} →</button>
+      </div>`;
+    } else if (hasAnyOutline && allDone) {
+      content = `<div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:36px;margin-bottom:12px">🎉</div>
+        <h3 style="margin-bottom:8px">All chapters complete!</h3>
+        <p style="color:var(--t2);margin-bottom:16px">Your book is finished. Head to Format & Publish.</p>
+        <button class="btn" onclick="showCompletion()" style="padding:14px 32px">📖 View Completed Book</button>
+      </div>`;
+    } else {
+      content = `<div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:36px;margin-bottom:12px">✍️</div>
+        <h3 style="margin-bottom:8px">No outline yet</h3>
+        <p style="color:var(--t2);margin-bottom:16px">Generate your chapter outline first, then come back here to write.</p>
+        <button class="btn" onclick="switchPhase('outline');render()" style="padding:14px 32px">Go to Outline →</button>
+      </div>`;
+    }
+  } else if (isLocked) {
+    content = `<div class="upgrade-card">
+      <h3>🔒 Chapter ${ch.number} is locked</h3>
+      <p>The free tier includes 1 chapter to preview. Upgrade to a Book Pass to write your complete book.</p>
+      <div class="price">$19.99</div>
+      <div class="price-sub">One-time · Up to 25 chapters · Full book</div>
+      <button class="btn" style="padding:14px 40px" onclick="startCheckout()">Get Book Pass</button>
+      <div style="margin-top:12px;font-size:12px;color:var(--t2)">Already purchased? <a href="#" onclick="checkPaymentStatus().then(render);return false">Check status</a></div>
+    </div>`;
+  } else {
+    const writeBtn = hasText ? `<button class="btn btn-o" onclick="writeChapter()">↻ Rewrite</button>` : `<button class="btn" id="btn-write-ch" onclick="writeChapter()">✨ Write Chapter</button>`;
+    content = `
+      <div class="head-row"><h2>Ch ${ch.number}: ${ch.title}</h2>${writeBtn}</div>
+      ${hasText ? `<div class="chapter-text">${escH(chapterTexts[activeChapter])}</div>` : `<div class="card" style="text-align:center;padding:32px"><p style="color:var(--t2)">Click "Write Chapter" to generate this chapter</p></div>`}
+    `;
+    // After chapter: show next action
+    if (hasText) {
+      const next = outline.find(c => c.number === activeChapter + 1);
+      const nextLocked = next && !isPaid && next.number > FREE_CHAPTER_LIMIT;
+      content += `<div style="margin-top:16px;padding:16px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div style="font-size:14px;color:var(--ok);font-weight:600">✓ Chapter ${activeChapter} of ${outline.length} complete</div>
+        ${allDone ? `<button class="btn btn-success" onclick="showCompletion()">📖 View Completed Book</button>` : next ? (nextLocked ? `<button class="btn" onclick="startCheckout()">🔓 Unlock Ch ${next.number}</button>` : `<button class="btn" onclick="selectChapter(${next.number})">Write Chapter ${next.number} →</button>`) : ""}
+      </div>`;
+    }
+  }
+
+  el.innerHTML = `<div style="max-width:800px;margin:0 auto">${content}</div>`;
+}
+
+// ===== CHUNKED CHAPTER WRITING =====
+async function writeChapter() {
+  const ch = outline.find(c => c.number === activeChapter);
+  if (!ch) return;
+  saveSide();
+  const title = document.getElementById("sb-title")?.value || localStorage.getItem("nn_title") || "Untitled";
+  const prevCh = activeChapter > 1 ? outline.find(c => c.number === activeChapter - 1) : null;
+  const prevText = prevCh && chapterTexts[prevCh.number] ? chapterTexts[prevCh.number].slice(-400) : "";
+  const sys = `You are a bestselling ${genre||"fiction"} author. Tone: ${tone||"literary"}. Heat: ${heat||"warm"}. Write vivid professional prose. No excessive em dashes.`;
+
+  showGen("Writing Chapter " + ch.number, "Planning scenes...", 5);
+  try {
+    // Step 1: Beat sheet
+    updateGen("Mapping the chapter arc...", 10);
+    const beats = await callAI(`Chapter ${ch.number}: "${ch.title}" for novel "${title}". Goal: ${ch.summary}. ${prevText?"Previous ended: ..."+prevText.slice(-200):""} Create 3 scene beats. Format: Scene 1: ...\nScene 2: ...\nScene 3: ...\nBrief only.`, sys, 400, "chapter");
+    const sceneLines = beats.split("\n").filter(l => l.trim().match(/^scene/i));
+    const scenes = sceneLines.length >= 2 ? sceneLines : ["Scene 1: Opening","Scene 2: Development","Scene 3: Climax"];
+
+    // Step 2: Write scenes
+    let full = "";
+    for (let i = 0; i < scenes.length; i++) {
+      updateGen(`Writing scene ${i+1} of ${scenes.length}...`, 15 + Math.round((i/scenes.length)*55));
+      const prev = full ? "\n[Previous ends:] ..." + full.slice(-300) : "";
+      const txt = await callAI(`Chapter ${ch.number}: "${ch.title}" for "${title}". Plan: ${ch.summary}. Beats:\n${scenes.join("\n")}\nWRITE SCENE ${i+1}: ${scenes[i]}${prev}\n${i===0?"Start naturally.":"Continue seamlessly."} ${i===scenes.length-1?"End compellingly.":""} 400-600 words. Just prose.`, sys, 900, "chapter");
+      full += (full ? "\n\n" : "") + txt.trim();
+    }
+
+    // Step 3: Polish
+    updateGen("Polishing...", 85);
+    const polished = await callAI(`Clean up transitions in this chapter. Fix repeated phrases. Keep all content. Return only the polished text:\n\n${full}`, sys, 1200, "chapter");
+    chapterTexts[activeChapter] = (polished||full).trim();
+
+    updateGen("Chapter complete!", 100);
+    setTimeout(() => { hideGen(); render(); }, 600);
+    notify("Chapter " + ch.number + " written!");
+  } catch(e) {
+    hideGen();
+    // Show error inline with retry button instead of just a toast
+    const el = document.getElementById("main-content");
+    if (el) {
+      el.innerHTML = `<div style="max-width:700px;margin:0 auto">
+        <div class="card" style="text-align:center;padding:32px">
+          <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+          <h3 style="margin-bottom:8px;color:var(--er)">Generation Failed</h3>
+          <p style="color:var(--t2);font-size:14px;margin-bottom:16px;line-height:1.6">${escH(e.message)}</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="btn" onclick="writeChapter()" style="padding:12px 28px">↻ Try Again</button>
+            <button class="btn btn-o" onclick="render()">Back to Chapter</button>
+          </div>
+          <p style="font-size:12px;color:var(--t2);margin-top:12px">If this keeps happening, wait a minute and try again. The AI service may be temporarily busy.</p>
+        </div>
+      </div>`;
+    }
+  }
+}
+
+// ===== COMPLETION =====
+function showCompletion() {
+  bookComplete = true;
+  const el = document.getElementById("main-content");
+  el.innerHTML = `<div class="complete-screen">
+    <div class="trophy">🏆</div>
+    <h2>Congratulations!</h2>
+    <p>You've written your entire book. All ${outline.length} chapters are complete. Here's what to do next.</p>
+    <div class="card" style="text-align:left;max-width:500px;margin:0 auto 16px">
+      <span class="lb">Next Steps</span>
+      <div class="chk"><input type="checkbox"> Review and edit each chapter</div>
+      <div class="chk"><input type="checkbox"> Generate publishing metadata (Publish tab)</div>
+      <div class="chk"><input type="checkbox"> Format manuscript for upload</div>
+      <div class="chk"><input type="checkbox"> Upload to Amazon KDP</div>
+      <div class="chk"><input type="checkbox"> Upload to Barnes & Noble Press</div>
+      <div class="chk"><input type="checkbox"> Set pricing and publish</div>
+    </div>
+    <button class="btn" onclick="switchPhase('publish');render()" style="margin:8px">Go to Publishing →</button>
+    <button class="btn btn-o" onclick="phase='idea';outline=[];chapterTexts={};activeChapter=null;render()" style="margin:8px">Start Another Book</button>
+  </div>`;
+}
+
+// ===== FORMAT PANEL =====
+function renderFormat(el) {
+  const writtenCount = Object.keys(chapterTexts).length;
+  const totalCh = outline.length;
+  const allDone = totalCh > 0 && writtenCount === totalCh;
+  const progressNote = totalCh === 0 
+    ? `<div class="card" style="text-align:center;padding:24px"><p style="color:var(--t2)">Generate your outline and write chapters first.</p><button class="btn btn-o" onclick="switchPhase('idea');render()" style="margin-top:12px">Go to Idea →</button></div>`
+    : !allDone
+    ? `<div class="card" style="padding:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">📝</span><div><div style="font-size:14px;font-weight:600">${writtenCount} of ${totalCh} chapters written</div><div style="font-size:12px;color:var(--t2)">Complete all chapters before exporting.</div></div><button class="btn btn-sm" onclick="switchPhase('write');render()" style="margin-left:auto">Continue Writing</button></div>`
+    : `<div class="card" style="padding:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px;color:var(--ok)">✓</span><div style="font-size:14px;font-weight:600;color:var(--ok)">All ${totalCh} chapters complete — ready to export</div></div>`;
+
+  el.innerHTML = `<div style="max-width:660px;margin:0 auto">
+    <h2>Format & Export</h2><p class="sub">Your manuscripts formatted for each platform.</p>
+    ${progressNote}
+    <div class="card"><span class="lb">Platforms</span>
+      <div class="plat-row"><span>📱</span><span>Kindle eBook</span><span>✓</span></div>
+      <div class="plat-row"><span>📖</span><span>KDP Paperback</span><span>✓</span></div>
+      <div class="plat-row"><span>🏪</span><span>B&N Press Paperback</span><span>✓</span></div>
+    </div>
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="card" style="text-align:center"><span class="lb">Trim</span><div style="font-weight:600">6"×9"</div></div>
+      <div class="card" style="text-align:center"><span class="lb">Font</span><div style="font-weight:600">Georgia 11pt</div></div>
+      <div class="card" style="text-align:center"><span class="lb">Spacing</span><div style="font-weight:600">1.15x</div></div>
+    </div>
+    <button class="btn btn-full" onclick="notify('Complete all chapters first')">📦 Export Files</button>
+  </div>`;
+}
+
+// ===== PUBLISH PANEL =====
+function renderPublish(el) {
+  el.innerHTML = `<div style="max-width:660px;margin:0 auto">
+    <h2>Publish</h2><p class="sub">Generate metadata and follow upload checklists.</p>
+    <div class="card">
+      <div class="head-row" style="margin-bottom:10px"><span class="lb" style="margin:0">Description</span><button class="btn btn-sm" id="btn-meta" onclick="genMeta()">✨ Auto-Generate</button></div>
+      <textarea class="inp" id="f-desc" placeholder="Book description..."></textarea>
+    </div>
+    <div class="card"><span class="lb">Keywords</span><div id="kw-list"><p style="font-size:12px;color:var(--t2);font-style:italic">Click Auto-Generate above</p></div></div>
+    <div class="card"><span class="lb">Upload Checklists</span>
+      <div class="cl-section"><div class="cl-title">Amazon KDP — Kindle</div>
+        ${["Log in to kdp.amazon.com","Create > Kindle eBook","Enter title, author, series","Paste description & keywords","Upload eBook .docx","Upload cover .jpg","Set price & Publish"].map(s=>`<div class="chk"><input type="checkbox"> ${s}</div>`).join("")}
+      </div>
+      <div class="cl-section"><div class="cl-title">Amazon KDP — Paperback</div>
+        ${["Create Paperback from listing","6×9, B&W, White, Matte","Upload Paperback .docx","Upload cover .pdf","Set price & Publish"].map(s=>`<div class="chk"><input type="checkbox"> ${s}</div>`).join("")}
+      </div>
+      <div class="cl-section"><div class="cl-title">B&N Press</div>
+        ${["Log in to press.barnesandnoble.com","Create New Print Book","6×9, B&W, Matte, White","Upload interior & cover","Enter details, set price, Publish"].map(s=>`<div class="chk"><input type="checkbox"> ${s}</div>`).join("")}
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--t2)">
+      <a href="#" onclick="currentView='legal-tos';render();return false">Terms of Service</a> · 
+      <a href="#" onclick="currentView='legal-privacy';render();return false">Privacy Policy</a>
+    </div>
+  </div>`;
+}
+
+async function genMeta() {
+  const title = localStorage.getItem("nn_title") || "Untitled";
+  const premise = localStorage.getItem("nn_premise") || "";
+  const btn = document.getElementById("btn-meta"); if(btn){btn.disabled=true;btn.textContent="⏳...";}
+  try {
+    const r = await callAI(`Metadata for: Title: ${title}, Genre: ${genre}, Premise: ${premise}. Return JSON: {"description":"2-3 paragraphs","keywords":["k1","k2","k3","k4","k5","k6","k7"]}. ONLY JSON.`, "Marketing expert. Return valid JSON only.", 800, "meta");
+    const m = JSON.parse(r.replace(/```json|```/g,"").trim());
+    if (m.description) { const d=document.getElementById("f-desc"); if(d) d.value=m.description; }
+    if (m.keywords) { keywords=m.keywords; const kl=document.getElementById("kw-list"); if(kl) kl.innerHTML=keywords.map(k=>'<span class="kw">'+k+'</span>').join(""); }
+    notify("Metadata generated!");
+  } catch(e) { notify("Error: "+e.message); }
+  if(btn){btn.disabled=false;btn.textContent="✨ Auto-Generate";}
+}
+
+// ===== LEGAL PAGES =====
+function renderLegalTOS() {
+  document.getElementById("app").innerHTML = `<div class="legal">
+    <a href="#" onclick="currentView='app';render();return false" style="font-size:13px">← Back to App</a>
+    <h2 style="margin-top:16px">Terms of Service</h2>
+    <p><strong>Effective Date:</strong> March 19, 2026</p>
+    <h3>1. Acceptance</h3><p>By using Novelist Nest ("the Service"), you agree to these Terms. If you do not agree, do not use the Service.</p>
+    <h3>2. Description</h3><p>Novelist Nest provides AI-assisted book writing, formatting guidance, and publishing preparation tools. Content is generated using artificial intelligence and should be reviewed before publication.</p>
+    <h3>3. AI-Generated Content</h3><p>All content generated by the Service is created by AI. You are solely responsible for reviewing, editing, and verifying all generated content before publication. The Service makes no guarantees about accuracy, originality, or suitability of generated content.</p>
+    <h3>4. Intellectual Property</h3><p>Content you generate using the Service is yours. However, you acknowledge that AI-generated content may contain similarities to other works. You are responsible for ensuring your published works do not infringe on others' rights.</p>
+    <h3>5. Acceptable Use</h3><p>You agree not to: use the Service to generate illegal, harmful, or infringing content; attempt to circumvent usage limits; share your account or beta access codes; overload or abuse the Service; reverse-engineer the Service.</p>
+    <h3>6. Usage Limits</h3><p>The Service has usage limits based on your plan tier. We reserve the right to modify these limits. Exceeding limits may result in temporary access restrictions.</p>
+    <h3>7. Payments & Refunds</h3><p>Book Pass purchases are one-time payments. Refunds may be issued within 7 days of purchase if no chapters have been generated. Once content has been generated, purchases are non-refundable.</p>
+    <h3>8. Limitation of Liability</h3><p>The Service is provided "as is." We are not liable for any damages arising from use of the Service, including but not limited to: lost revenue, publishing errors, content issues, or service interruptions. Maximum liability is limited to the amount paid for the Service.</p>
+    <h3>9. Suspension</h3><p>We reserve the right to suspend or terminate access for users who violate these Terms or engage in abusive behavior.</p>
+    <h3>10. Fair Use</h3><p>The Service is intended for personal book creation. Automated or bulk content generation beyond normal use is prohibited.</p>
+    <h3>11. Changes</h3><p>We may update these Terms. Continued use constitutes acceptance.</p>
+    <p style="margin-top:24px;font-style:italic;color:var(--t2)">This is a starter template and does not constitute legal advice. Consult an attorney for final terms.</p>
+  </div>`;
+}
+
+function renderLegalPrivacy() {
+  document.getElementById("app").innerHTML = `<div class="legal">
+    <a href="#" onclick="currentView='app';render();return false" style="font-size:13px">← Back to App</a>
+    <h2 style="margin-top:16px">Privacy Policy</h2>
+    <p><strong>Effective Date:</strong> March 19, 2026</p>
+    <h3>1. Information We Collect</h3><p>We collect: IP addresses for rate limiting and abuse prevention; book content you create (stored locally in your browser); payment information processed by Stripe (we do not store card details).</p>
+    <h3>2. How We Use Information</h3><p>To provide and improve the Service; to enforce usage limits; to prevent abuse; to process payments.</p>
+    <h3>3. AI Processing</h3><p>Your prompts and book content are sent to Anthropic's API for processing. Refer to Anthropic's privacy policy for their data handling practices.</p>
+    <h3>4. Data Storage</h3><p>Book content is stored in your browser's local storage. We do not store your manuscripts on our servers. Rate limiting and usage data is stored temporarily.</p>
+    <h3>5. Third Parties</h3><p>We use: Anthropic (AI generation); Stripe (payments); Netlify (hosting). Each has their own privacy policies.</p>
+    <h3>6. Your Rights</h3><p>You may clear your browser data at any time to remove locally stored content. Contact us to request deletion of server-side usage data.</p>
+    <h3>7. Contact</h3><p>For questions, contact us through the app.</p>
+    <p style="margin-top:24px;font-style:italic;color:var(--t2)">This is a starter template and does not constitute legal advice. Consult an attorney for final privacy policy.</p>
+  </div>`;
+}
+
+// ===== INIT =====
+// Payment init (at top of script) handles first render after checking URL params + payment status
+// If initPayment didn't trigger (e.g., no payment params), render now
+if (!paymentVerifying) render();
+</script>
+</body>
+</html>

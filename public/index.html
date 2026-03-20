@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novelist Nest - Write. Format. Publish.</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e8e6e1;font-family:'Crimson Pro',Georgia,serif}
+a{color:#c4956a;text-decoration:none}
+.c{max-width:1100px;margin:0 auto;padding:0 20px}
+nav{padding:14px 0;border-bottom:1px solid #2a2a3e;position:sticky;top:0;background:rgba(10,10,15,.95);backdrop-filter:blur(12px);z-index:100}
+nav .c{display:flex;justify-content:space-between;align-items:center}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:#c4956a}
+.logo span{color:#8b8999;font-size:10px;letter-spacing:2px;text-transform:uppercase;display:block;font-family:'Crimson Pro',serif}
+.nl{display:flex;gap:16px;align-items:center}
+.nl a{color:#8b8999;font-size:14px}.nl a:hover{color:#e8e6e1}
+.b{padding:10px 22px;border-radius:8px;font-family:'Crimson Pro',serif;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-block;text-align:center}
+.bp{background:#c4956a;color:#fff}.bp:hover{background:#8b6f4e}
+.bo{border:1px solid #2a2a3e;color:#8b8999;background:transparent}.bo:hover{border-color:#c4956a;color:#c4956a}
+.bl{padding:16px 40px;font-size:17px;border-radius:10px}
+.hero{padding:80px 0 60px;text-align:center;position:relative}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(34px,6vw,60px);font-weight:900;line-height:1.1;margin-bottom:20px}
+.hero h1 em{font-style:italic;color:#c4956a}
+.hero p{font-size:18px;color:#8b8999;max-width:540px;margin:0 auto 32px;line-height:1.7}
+.hb{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.hs{margin-top:14px;font-size:13px;color:#8b8999}
+.ft{padding:60px 0;border-top:1px solid #2a2a3e}
+.sl{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#c4956a;font-weight:600;margin-bottom:10px;text-align:center}
+.st{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,36px);font-weight:800;text-align:center;margin-bottom:36px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.fc{background:#141420;border:1px solid #2a2a3e;border-radius:12px;padding:24px}
+.fc:hover{border-color:#c4956a}
+.fi{font-size:26px;margin-bottom:10px}
+.fc h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.fc p{font-size:13px;color:#8b8999;line-height:1.6}
+.hw{padding:60px 0;border-top:1px solid #2a2a3e}
+.steps{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.stp{text-align:center;padding:0 10px;min-width:120px;margin-bottom:16px}
+.sn{width:44px;height:44px;border-radius:50%;background:#141420;border:2px solid #c4956a;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:16px;font-weight:700;color:#c4956a}
+.stp h3{font-size:14px;font-weight:600;margin-bottom:2px}
+.stp p{font-size:11px;color:#8b8999}
+.pr{padding:60px 0;border-top:1px solid #2a2a3e}
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;max-width:620px;margin:0 auto}
+.pc{background:#141420;border:1px solid #2a2a3e;border-radius:14px;padding:32px 24px;text-align:center;position:relative}
+.pc:hover{border-color:#c4956a}.pc.ft2{border-color:#c4956a}
+.pb{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#c4956a;color:#fff;font-size:10px;font-weight:600;padding:3px 14px;border-radius:20px;letter-spacing:1px;text-transform:uppercase}
+.pn{font-size:12px;color:#8b8999;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px}
+.pa{font-family:'Playfair Display',serif;font-size:42px;font-weight:800;margin-bottom:2px}
+.pp{color:#8b8999;font-size:13px;margin-bottom:18px}
+.pf{list-style:none;text-align:left;margin-bottom:24px}
+.pf li{padding:5px 0;font-size:13px;color:#8b8999;border-bottom:1px solid #2a2a3e}
+.pf li::before{content:'✓ ';color:#c4956a;font-weight:700}
+.tq{padding:48px 0;border-top:1px solid #2a2a3e;text-align:center}
+.tq blockquote{font-size:18px;font-style:italic;max-width:600px;margin:0 auto 10px;line-height:1.7}
+.tq cite{color:#8b8999;font-size:13px;font-style:normal}
+footer{padding:28px 0;border-top:1px solid #2a2a3e;text-align:center}
+footer p{font-size:12px;color:#8b8999}
+</style>
+</head>
+<body>
+<nav><div class="c"><div class="logo">Novelist Nest<span>Write. Format. Publish.</span></div><div class="nl"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="/app.html" class="b bp">Launch App</a></div></div></nav>
+<section class="hero"><div class="c"><h1>From idea to <em>published book</em><br>in one place.</h1><p>Novelist Nest is the AI-powered platform that writes, formats, and prepares your book for Amazon KDP and Barnes & Noble Press.</p><div class="hb"><a href="/app.html" class="b bp bl">Start Writing Free</a><a href="#pricing" class="b bo bl">View Plans</a></div><p class="hs">No credit card required. Free tier includes 1 project.</p></div></section>
+<section class="ft" id="features"><div class="c"><div class="sl">Features</div><h2 class="st">Everything other apps forgot to build.</h2><div class="fg">
+<div class="fc"><div class="fi">✨</div><h3>AI-Powered Writing</h3><p>Enter your premise. We generate outlines, write chapters, and produce publication-ready prose.</p></div>
+<div class="fc"><div class="fi">📐</div><h3>Multi-Platform Formatting</h3><p>Formatted manuscripts for Kindle eBook, KDP Paperback, and B&N Press with correct margins and fonts.</p></div>
+<div class="fc"><div class="fi">🔑</div><h3>Publishing Metadata</h3><p>Auto-generate descriptions, keywords, categories, and pricing. Copy-paste ready for upload forms.</p></div>
+<div class="fc"><div class="fi">📋</div><h3>Upload Checklists</h3><p>Step-by-step instructions for every field on KDP and B&N Press.</p></div>
+<div class="fc"><div class="fi">📚</div><h3>Series Management</h3><p>Track multi-book series with consistent metadata and connected storylines.</p></div>
+<div class="fc"><div class="fi">🎯</div><h3>Genre Intelligence</h3><p>Built-in knowledge of reader expectations across every major genre.</p></div>
+</div></div></section>
+<section class="hw"><div class="c"><div class="sl">Workflow</div><h2 class="st">Five steps. One app. Zero guesswork.</h2><div class="steps">
+<div class="stp"><div class="sn">1</div><h3>Idea</h3><p>Premise, genre, tone</p></div>
+<div class="stp"><div class="sn">2</div><h3>Outline</h3><p>AI chapter structure</p></div>
+<div class="stp"><div class="sn">3</div><h3>Write</h3><p>Full chapters by AI</p></div>
+<div class="stp"><div class="sn">4</div><h3>Format</h3><p>Export all platforms</p></div>
+<div class="stp"><div class="sn">5</div><h3>Publish</h3><p>Metadata included</p></div>
+</div></div></section>
+<section class="tq"><div class="c"><blockquote>"I gave it a book idea on Saturday morning. By Sunday night I had a complete novel formatted for three platforms with descriptions, keywords, and upload checklists."</blockquote><cite>R.S., Author</cite></div></section>
+<section class="pr" id="pricing"><div class="c"><div class="sl">Pricing</div><h2 class="st">Start free. Scale when ready.</h2><div class="pg">
+<div class="pc"><div class="pn">Monthly</div><div class="pa">$19.99</div><div class="pp">per month</div><ul class="pf"><li>Unlimited projects</li><li>AI-powered writing</li><li>All export formats</li><li>Auto-generated metadata</li><li>Upload checklists</li><li>Series management</li></ul><a href="https://buy.stripe.com/test_00wfZh4SV8K94vTgMY08g04" class="b bo" style="width:100%">Subscribe Monthly</a></div>
+<div class="pc ft2"><div class="pb">Save 40%</div><div class="pn">Annual</div><div class="pa">$11.99</div><div class="pp">per month, billed annually</div><ul class="pf"><li>Everything in Monthly</li><li>Priority AI generation</li><li>Cover spec generation</li><li>Advanced series tools</li><li>Royalty calculator</li><li>Email support</li></ul><a href="https://buy.stripe.com/test_00wfZh4SV8K94vTgMY08g04" class="b bp" style="width:100%">Subscribe Annually</a></div>
+</div></div></section>
+<footer><div class="c"><p><strong style="color:#c4956a">Novelist Nest</strong></p><p>&copy; 2026 Novelist Nest. Built for authors who publish.</p></div></footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "novelist-nest",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}
