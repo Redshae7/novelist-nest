@@ -162,8 +162,10 @@ let paymentVerifying = false;
 let phase = "idea", genre = "", tone = "", length = null, heat = "";
 let outline = [], activeChapter = null, keywords = [];
 let chapterTexts = {};
+let editingChapter = null; // Which chapter is being edited
 let bookComplete = false;
-let currentView = "app"; // app | legal-tos | legal-privacy | payment-processing | tos-gate
+let currentView = "app"; // app | legal-tos | legal-privacy | payment-processing | edit-book
+const EDIT_PASS_PRICE = "price_1TD7OwGfC89Ah6OSTBL3E0b3"; | tos-gate
 
 const GENRES = ["Fiction","Non-Fiction","Romance","Thriller","Sci-Fi","Fantasy","Children's","Self-Help","Memoir"];
 const TONES = ["Literary","Conversational","Dark","Humorous","Inspirational","Suspenseful","Romantic"];
@@ -302,6 +304,7 @@ async function acceptTos() {
 function render() {
   if (currentView === "payment-processing") { renderPaymentProcessing(); return; }
   if (currentView === "payment-success") { renderPaymentSuccess(); return; }
+  if (currentView === "edit-result") { renderApp(); return; } // renderApp calls renderPanel
   if (currentView === "legal-tos") { renderLegalTOS(); return; }
   if (currentView === "legal-privacy") { renderLegalPrivacy(); return; }
   if (!betaAccess) { renderBetaGate(); return; }
@@ -488,9 +491,10 @@ function renderApp() {
   <div class="topbar">
     <div class="logo" onclick="currentView='app';render()">Novelist Nest<small>Write. Format. Publish.</small></div>
     <div class="phases" id="phases">
-      ${["idea","outline","write","format","publish"].map((p,i) => {
+      ${["idea","outline","write","format","publish","edit-book"].map((p,i) => {
+        const label = p === "edit-book" ? "Edit My Book" : p[0].toUpperCase()+p.slice(1);
         const on = phase === p ? " on" : "";
-        return `<button class="ph${on}" data-phase="${p}" onclick="switchPhase('${p}')">${i+1}. ${p[0].toUpperCase()+p.slice(1)}</button>`;
+        return `<button class="ph${on}" data-phase="${p}" onclick="switchPhase('${p}')">${p === "edit-book" ? "📝" : (i+1)+"."} ${label}</button>`;
       }).join("")}
     </div>
   </div>
@@ -524,6 +528,10 @@ function renderPanel() {
   else if (phase === "write") renderWrite(el);
   else if (phase === "format") renderFormat(el);
   else if (phase === "publish") renderPublish(el);
+  else if (phase === "edit-book") {
+    if (currentView === "edit-result") renderEditResult(el);
+    else renderEditBook(el);
+  }
 }
 
 function switchPhase(p) { phase = p; renderPanel(); document.querySelectorAll(".ph").forEach(b => b.classList.toggle("on", b.dataset.phase === p)); }
@@ -700,11 +708,33 @@ function renderWrite(el) {
       <div style="margin-top:12px;font-size:12px;color:var(--t2)">Already purchased? <a href="#" onclick="checkPaymentStatus().then(render);return false">Check status</a></div>
     </div>`;
   } else {
-    const writeBtn = hasText ? `<button class="btn btn-o" onclick="writeChapter()">↻ Rewrite</button>` : `<button class="btn" id="btn-write-ch" onclick="writeChapter()">✨ Write Chapter</button>`;
-    content = `
-      <div class="head-row"><h2>Ch ${ch.number}: ${ch.title}</h2>${writeBtn}</div>
-      ${hasText ? `<div class="chapter-text">${escH(chapterTexts[activeChapter])}</div>` : `<div class="card" style="text-align:center;padding:32px"><p style="color:var(--t2)">Click "Write Chapter" to generate this chapter</p></div>`}
-    `;
+    const writeBtn = hasText 
+      ? `<button class="btn btn-o btn-sm" onclick="writeChapter()" style="margin-left:8px">↻ Rewrite</button>` 
+      : `<button class="btn" id="btn-write-ch" onclick="writeChapter()">✨ Write Chapter</button>`;
+    
+    if (hasText) {
+      const isEditing = editingChapter === activeChapter;
+      content = `
+        <div class="head-row">
+          <h2>Ch ${ch.number}: ${ch.title}</h2>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${isEditing 
+              ? `<button class="btn btn-sm" onclick="saveChapterEdit()">💾 Save</button><button class="btn btn-o btn-sm" onclick="cancelChapterEdit()">Cancel</button>` 
+              : `<button class="btn btn-sm" onclick="startChapterEdit(${activeChapter})">✏️ Edit</button>`}
+            ${writeBtn}
+          </div>
+        </div>
+        ${isEditing 
+          ? `<textarea class="inp" id="chapter-editor" style="min-height:400px;font-size:15px;line-height:1.85;white-space:pre-wrap">${escH(chapterTexts[activeChapter])}</textarea>
+             <p style="font-size:12px;color:var(--t2);margin-top:8px">Edit your chapter directly. Click Save when done.</p>` 
+          : `<div class="chapter-text">${escH(chapterTexts[activeChapter])}</div>`}
+      `;
+    } else {
+      content = `
+        <div class="head-row"><h2>Ch ${ch.number}: ${ch.title}</h2>${writeBtn}</div>
+        <div class="card" style="text-align:center;padding:32px"><p style="color:var(--t2)">Click "Write Chapter" to generate this chapter</p></div>
+      `;
+    }
     // After chapter: show next action
     if (hasText) {
       const next = outline.find(c => c.number === activeChapter + 1);
@@ -775,7 +805,139 @@ async function writeChapter() {
   }
 }
 
-// ===== COMPLETION =====
+// ===== CHAPTER EDITING =====
+function startChapterEdit(n) {
+  editingChapter = n;
+  render();
+}
+function cancelChapterEdit() {
+  editingChapter = null;
+  render();
+}
+function saveChapterEdit() {
+  const el = document.getElementById("chapter-editor");
+  if (el && activeChapter) {
+    chapterTexts[activeChapter] = el.value;
+    notify("Chapter " + activeChapter + " saved!");
+  }
+  editingChapter = null;
+  render();
+}
+
+// ===== EDIT MY BOOK (Bring Your Own) =====
+let uploadedManuscript = "";
+
+async function startEditCheckout() {
+  try {
+    const r = await fetch("/api/create-checkout", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ priceId: EDIT_PASS_PRICE })
+    });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
+    else notify("Error: " + (d.error || "Unknown"));
+  } catch(e) { notify("Checkout error: " + e.message); }
+}
+
+function handleManuscriptUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    uploadedManuscript = e.target.result;
+    document.getElementById("upload-status").innerHTML = `<span style="color:var(--ok)">✓ ${escH(file.name)} loaded (${Math.round(file.size/1024)}KB)</span>`;
+    document.getElementById("btn-edit-manuscript").disabled = false;
+    document.getElementById("btn-edit-manuscript").style.opacity = "1";
+  };
+  reader.readAsText(file);
+}
+
+async function editManuscript() {
+  if (!uploadedManuscript) { notify("Upload a manuscript first"); return; }
+  const text = uploadedManuscript.slice(0, 12000); // Cap input for safety
+  showGen("Editing Your Manuscript", "Analyzing text...", 10);
+  try {
+    updateGen("Correcting grammar and punctuation...", 25);
+    const pass1 = await callAI(
+      `You are a professional book editor. Fix all grammar, spelling, punctuation, and sentence structure issues in this manuscript excerpt. Keep the author's voice and style intact. Return ONLY the corrected text:\n\n${text}`,
+      "Professional book editor. Fix errors. Keep the author's voice.", 1200, "chapter"
+    );
+    updateGen("Improving flow and clarity...", 50);
+    const pass2 = await callAI(
+      `Polish this text for publication. Fix awkward phrasing, improve flow, ensure consistent tense and POV. Do NOT change the story or voice. Return ONLY the polished text:\n\n${pass1}`,
+      "Professional book editor. Polish for publication.", 1200, "chapter"
+    );
+    updateGen("Finalizing...", 85);
+    uploadedManuscript = pass2.trim();
+    updateGen("Complete!", 100);
+    setTimeout(() => { hideGen(); currentView = "edit-result"; render(); }, 600);
+    notify("Manuscript edited!");
+  } catch(e) { hideGen(); notify("Error: " + e.message); }
+}
+
+function renderEditBook(el) {
+  el.innerHTML = `<div style="max-width:660px;margin:0 auto">
+    <h2>Edit My Book</h2>
+    <p class="sub">Already have a manuscript? Upload it and we'll edit and format it for publishing.</p>
+    
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <div style="font-size:32px">📝</div>
+        <div>
+          <div style="font-size:16px;font-weight:600">AI Book Edit & Format</div>
+          <div style="font-size:13px;color:var(--t2)">Grammar, punctuation, spelling, flow, and publishing format</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800">$14.99</div>
+          <div style="font-size:11px;color:var(--t2)">one-time</div>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="font-size:13px;color:var(--t2)">✓ Grammar & spelling correction</div>
+        <div style="font-size:13px;color:var(--t2)">✓ Punctuation fixes</div>
+        <div style="font-size:13px;color:var(--t2)">✓ Sentence flow improvement</div>
+        <div style="font-size:13px;color:var(--t2)">✓ Tense & POV consistency</div>
+        <div style="font-size:13px;color:var(--t2)">✓ Publishing format prep</div>
+        <div style="font-size:13px;color:var(--t2)">✓ KDP & B&N ready</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="lb">Upload Your Manuscript</span>
+      <p style="font-size:13px;color:var(--t2);margin-bottom:12px">Paste your text below or upload a .txt file. We'll edit it chapter by chapter.</p>
+      <div style="margin-bottom:12px">
+        <input type="file" accept=".txt,.md" onchange="handleManuscriptUpload(this)" style="font-size:13px;color:var(--t2)">
+      </div>
+      <div id="upload-status" style="font-size:13px;margin-bottom:12px"></div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">Or paste directly:</div>
+      <textarea class="inp" id="manuscript-paste" placeholder="Paste your manuscript text here..." style="min-height:200px" oninput="uploadedManuscript=this.value;document.getElementById('btn-edit-manuscript').disabled=!this.value;document.getElementById('btn-edit-manuscript').style.opacity=this.value?'1':'0.5'"></textarea>
+    </div>
+
+    <button class="btn btn-full" id="btn-edit-manuscript" disabled style="opacity:0.5" onclick="editManuscript()">✨ Edit & Format My Manuscript</button>
+    <p style="font-size:12px;color:var(--t2);text-align:center;margin-top:8px">Free preview edit. Full manuscript editing requires Edit Pass purchase.</p>
+  </div>`;
+}
+
+function renderEditResult(el) {
+  el.innerHTML = `<div style="max-width:700px;margin:0 auto">
+    <div class="head-row">
+      <h2>Edited Manuscript</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="copyToClipboard()">📋 Copy</button>
+        <button class="btn btn-o btn-sm" onclick="currentView='app';phase='edit-book';render()">← Back</button>
+      </div>
+    </div>
+    <div class="chapter-text" style="max-height:none">${escH(uploadedManuscript)}</div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn" onclick="copyToClipboard()" style="padding:14px 32px">📋 Copy Edited Text</button>
+    </div>
+  </div>`;
+}
+
+function copyToClipboard() {
+  navigator.clipboard.writeText(uploadedManuscript).then(() => notify("Copied to clipboard!")).catch(() => notify("Copy failed — select and copy manually"));
+}
 function showCompletion() {
   bookComplete = true;
   const el = document.getElementById("main-content");

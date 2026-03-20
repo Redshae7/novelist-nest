@@ -27,15 +27,24 @@ export default async (req, context) => {
   const origin = req.headers.get("origin") || "https://novelistnest.netlify.app";
 
   try {
+    // Determine which price to use - default to Book Pass
+    const VALID_PRICES = [
+      "price_1TCdhPGfC89Ah6OShoSU2EIR", // Book Pass $19.99
+      "price_1TD7OwGfC89Ah6OSTBL3E0b3"  // Edit Pass $14.99
+    ];
+    const requestedPrice = body.priceId || "price_1TCdhPGfC89Ah6OShoSU2EIR";
+    const priceId = VALID_PRICES.includes(requestedPrice) ? requestedPrice : VALID_PRICES[0];
+
     // Create Stripe Checkout Session via raw API (no SDK needed)
     const params = new URLSearchParams();
     params.append("mode", "payment");
     params.append("success_url", origin + "/app.html?payment=success&session_id={CHECKOUT_SESSION_ID}");
     params.append("cancel_url", origin + "/app.html?payment=cancelled");
-    params.append("line_items[0][price]", "price_1TCdhPGfC89Ah6OShoSU2EIR"); // Book Pass price
+    params.append("line_items[0][price]", priceId);
     params.append("line_items[0][quantity]", "1");
     params.append("metadata[ip]", ip);
     params.append("metadata[source]", "novelist-nest-app");
+    params.append("metadata[product_type]", priceId === VALID_PRICES[1] ? "edit-pass" : "book-pass");
     if (body.email) params.append("customer_email", body.email);
 
     const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
