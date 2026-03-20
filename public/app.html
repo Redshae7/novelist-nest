@@ -164,8 +164,8 @@ let outline = [], activeChapter = null, keywords = [];
 let chapterTexts = {};
 let editingChapter = null; // Which chapter is being edited
 let bookComplete = false;
-let currentView = "app"; // app | legal-tos | legal-privacy | payment-processing | edit-book
-const EDIT_PASS_PRICE = "price_1TD7OwGfC89Ah6OSTBL3E0b3"; | tos-gate
+let currentView = "app"; // app | legal-tos | legal-privacy | payment-processing | edit-book | tos-gate
+const EDIT_PASS_PRICE = "price_1TD7OwGfC89Ah6OSTBL3E0b3";
 
 const GENRES = ["Fiction","Non-Fiction","Romance","Thriller","Sci-Fi","Fantasy","Children's","Self-Help","Memoir"];
 const TONES = ["Literary","Conversational","Dark","Humorous","Inspirational","Suspenseful","Romantic"];
@@ -286,17 +286,23 @@ async function acceptTos() {
 
 // ===== ON PAGE LOAD: check URL for payment return =====
 (async function initPayment() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("payment") === "success" && params.get("session_id")) {
-    await verifyPayment(params.get("session_id"));
-  } else if (params.get("payment") === "cancelled") {
-    window.history.replaceState({}, "", "/app.html");
-    notify("Payment cancelled. You can upgrade anytime.");
-  } else {
-    // Background checks
-    await checkPaymentStatus();
-    if (betaAccess) await checkTosStatus();
-    render();
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success" && params.get("session_id")) {
+      await verifyPayment(params.get("session_id"));
+    } else if (params.get("payment") === "cancelled") {
+      window.history.replaceState({}, "", "/app.html");
+      notify("Payment cancelled. You can upgrade anytime.");
+      render();
+    } else {
+      // Background checks — don't let failures block rendering
+      try { await checkPaymentStatus(); } catch(e) {}
+      try { if (betaAccess) await checkTosStatus(); } catch(e) {}
+      render();
+    }
+  } catch(e) {
+    console.error("Init error:", e);
+    render(); // Always render even if init fails
   }
 })()
 
