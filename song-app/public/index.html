@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Heartnote — A Custom Song They'll Never Forget</title>
+<meta name="description" content="Turn your story into an original, studio-quality song. Answer a few questions, hear a free preview in minutes, and gift a song they'll keep forever." />
+<meta property="og:title" content="Heartnote — A Custom Song They'll Never Forget" />
+<meta property="og:description" content="An original song, written and produced from your story. Free preview in minutes." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,800;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#faf5ee; --card:#fffdfa; --ink:#2a2522; --muted:#7c736b;
+    --accent:#d98b6f; --accent-dk:#c06f53; --line:#ece3d8; --good:#5a9d7e;
+    --shadow:0 10px 40px rgba(120,90,60,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:800;line-height:1.08;letter-spacing:-.01em}
+  a{color:var(--accent-dk)}
+  .nav{padding:18px 0;text-align:center;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(250,245,238,.9);backdrop-filter:blur(10px);z-index:50}
+  .logo{font-family:'Fraunces',serif;font-weight:800;font-size:22px}
+  .logo b{color:var(--accent)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:999px;background:var(--accent);color:#fff;font-family:'Inter';font-size:17px;font-weight:600;padding:16px 30px;cursor:pointer;width:100%;transition:transform .08s ease,background .15s}
+  .btn:hover{background:var(--accent-dk)}
+  .btn:active{transform:scale(.99)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--accent-dk);border:1px solid var(--line)}
+  .screen{display:none;padding:34px 0 70px}
+  .screen.active{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* hero */
+  .hero{text-align:center;padding-top:36px}
+  .hero .eyebrow{color:var(--accent-dk);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
+  .hero h1{font-size:clamp(34px,7vw,52px);margin-bottom:16px}
+  .hero h1 i{color:var(--accent);font-weight:500}
+  .hero p.sub{font-size:18px;color:var(--muted);max-width:520px;margin:0 auto 26px}
+  .trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:18px}
+  .trust span{display:inline-flex;align-items:center;gap:6px}
+  .steps3{display:flex;gap:10px;justify-content:center;margin:34px 0 6px;flex-wrap:wrap}
+  .step3{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:center}
+  .step3 .n{width:34px;height:34px;border-radius:50%;background:#f6e9e1;color:var(--accent-dk);display:flex;align-items:center;justify-content:center;font-weight:700;margin:0 auto 8px}
+  .step3 h3{font-size:15px;margin-bottom:3px}
+  .step3 p{font-size:13px;color:var(--muted)}
+
+  /* form */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:var(--shadow)}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-weight:600;font-size:14px;margin-bottom:7px}
+  .field .hint{color:var(--muted);font-weight:400;font-size:12px}
+  input,select,textarea{width:100%;font-family:'Inter';font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px 14px;outline:none;transition:border .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:96px;resize:vertical}
+  .row{display:flex;gap:12px}.row>*{flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 15px;font-size:14px;cursor:pointer;transition:all .12s}
+  .chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sectiontitle{font-size:clamp(26px,5vw,34px);text-align:center;margin-bottom:6px}
+  .sectionsub{text-align:center;color:var(--muted);margin-bottom:24px}
+
+  /* progress */
+  .prog h1{font-size:clamp(30px,6vw,44px);text-align:center;margin-bottom:8px}
+  .prog .lead{text-align:center;color:var(--muted);margin-bottom:4px}
+  .prog .lead i{font-style:italic}
+  .bar{height:10px;background:#efe6db;border-radius:999px;overflow:hidden;margin:24px 0 8px}
+  .bar > i{display:block;height:100%;width:5%;background:linear-gradient(90deg,var(--accent),var(--accent-dk));border-radius:999px;transition:width .6s ease}
+  .barrow{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+  .pct{color:var(--accent-dk);font-weight:700}
+  .track{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:26px 0}
+  .tnode{text-align:center;flex:0 0 auto;width:74px}
+  .tnode .dot{width:36px;height:36px;border-radius:50%;background:#efe6db;color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 7px;font-size:15px}
+  .tnode.done .dot{background:var(--good)}
+  .tnode.active .dot{background:var(--accent);animation:pulse 1.4s infinite}
+  .tnode small{font-size:12px;color:var(--muted)}
+  .tnode.done small,.tnode.active small{color:var(--ink);font-weight:600}
+  .tline{flex:1;height:2px;background:#efe6db;margin:0 -6px;position:relative;top:-13px}
+  .tline.fill{background:var(--good)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,139,111,.5)}50%{box-shadow:0 0 0 9px rgba(217,139,111,0)}}
+  .quote{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px;text-align:center}
+  .quote p{font-style:italic;font-size:16px}
+  .quote cite{display:block;margin-top:8px;color:var(--muted);font-size:13px;font-style:normal}
+
+  /* preview / paywall */
+  .player{background:linear-gradient(180deg,#fff,#fdf6f0);border:1px solid var(--line);border-radius:18px;padding:28px;text-align:center;box-shadow:var(--shadow)}
+  .playbtn{width:88px;height:88px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 8px 24px rgba(217,139,111,.4);transition:transform .1s}
+  .playbtn:hover{transform:scale(1.04)}
+  .player h3{font-size:22px;margin-bottom:2px}
+  .player .pstate{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .pbar{height:8px;background:#efe6db;border-radius:999px;overflow:hidden}
+  .pbar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px}
+  .ptime{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px}
+  .lovetag{display:inline-block;background:#e6f1ea;color:var(--good);font-weight:600;font-size:13px;padding:6px 16px;border-radius:999px;margin:0 auto 10px}
+  .unlock h2{text-align:center;font-size:30px;margin-bottom:18px}
+  .benefits{list-style:none;margin:0 auto 18px;max-width:420px}
+  .benefits li{display:flex;gap:10px;padding:7px 0;font-size:15px}
+  .benefits li svg{flex:0 0 auto;margin-top:3px}
+  .benefits li.bonus{color:var(--accent-dk);font-weight:600}
+  .upsell{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .upsell input{width:auto}
+  .upsell .u-main{flex:1}
+  .upsell .u-main b{display:block;font-size:14px}
+  .upsell .u-main span{font-size:12px;color:var(--muted)}
+  .upsell .u-price{font-weight:700;color:var(--accent-dk)}
+  .total{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;margin:14px 2px;font-size:18px}
+  .total .t-amt{font-family:'Fraunces';font-size:26px}
+  .pay-meta{text-align:center;color:var(--muted);font-size:12px;margin-top:12px}
+  .err{background:#fdecea;color:#a3372b;border:1px solid #f4c7c0;border-radius:10px;padding:12px 14px;font-size:14px;margin:12px 0;display:none}
+  .err.show{display:block}
+  .lyrbox{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .lyrbox summary{cursor:pointer;font-weight:600}
+  .lyrbox pre{white-space:pre-wrap;font-family:'Inter';font-size:14px;color:var(--muted);margin-top:10px;line-height:1.7}
+  footer{padding:30px 0 50px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+  .spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;display:inline-block;animation:rot .7s linear infinite;vertical-align:-3px}
+  @keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="nav"><span class="logo">Heart<b>note</b>.</span></div>
+
+<!-- ========================= LANDING + FORM ========================= -->
+<section id="screen-form" class="screen active">
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">A gift they'll play on repeat</div>
+      <h1>Turn your story into <i>their</i> song.</h1>
+      <p class="sub">Answer a few questions about someone you love. We'll write and produce an original, studio-quality song — and you'll hear a free preview in minutes.</p>
+      <div class="steps3">
+        <div class="step3"><div class="n">1</div><h3>Tell their story</h3><p>Names, the occasion, a few memories.</p></div>
+        <div class="step3"><div class="n">2</div><h3>Hear a preview</h3><p>An original song, free, in ~2 min.</p></div>
+        <div class="step3"><div class="n">3</div><h3>Unlock & gift it</h3><p>Full song + a shareable gift page.</p></div>
+      </div>
+      <div class="trust">
+        <span>★★★★★ <b>Loved by 12,000+ gifters</b></span>
+        <span>🔒 Free preview — pay only if you love it</span>
+      </div>
+    </div>
+
+    <h2 class="sectiontitle" style="margin-top:46px">Create your song</h2>
+    <p class="sectionsub">It takes about a minute.</p>
+
+    <form id="songForm" class="card" autocomplete="off">
+      <div class="err" id="formErr"></div>
+      <div class="row">
+        <div class="field">
+          <label>Who is it for? <span class="hint">name</span></label>
+          <input id="recipient" required placeholder="e.g. Maya" maxlength="80" />
+        </div>
+        <div class="field">
+          <label>From <span class="hint">your name (optional)</span></label>
+          <input id="sender" placeholder="e.g. Dad" maxlength="80" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Your relationship <span class="hint">optional</span></label>
+          <input id="relationship" placeholder="e.g. my daughter" maxlength="80" />
+        </div>
+        <div class="field">
+          <label>Occasion <span class="hint">optional</span></label>
+          <input id="occasion" placeholder="e.g. 18th birthday" maxlength="80" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Pick a style</label>
+        <div class="chips" id="genreChips"></div>
+      </div>
+      <div class="field">
+        <label>Mood</label>
+        <div class="chips" id="moodChips"></div>
+      </div>
+      <div class="field">
+        <label>The story &amp; memories <span class="hint">the more specific, the more personal the song</span></label>
+        <textarea id="memories" placeholder="Inside jokes, how you met, things they say, moments you'll never forget…" maxlength="1500"></textarea>
+      </div>
+      <button class="btn" type="submit" id="createBtn">Write my song →</button>
+      <p class="pay-meta">Free to preview. No payment until you love it.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ========================= PROGRESS ========================= -->
+<section id="screen-progress" class="screen">
+  <div class="wrap prog">
+    <h1>Creating Your Song…</h1>
+    <p class="lead">Composing a one-of-a-kind song for <b id="progName">them</b></p>
+    <p class="lead"><i>The best gifts take a moment to create.</i></p>
+
+    <div class="bar"><i id="progFill"></i></div>
+    <div class="barrow"><span id="progLabel">Writing the lyrics…</span><span class="pct" id="progPct">5%</span></div>
+
+    <div class="track">
+      <div class="tnode active" id="t-lyrics"><div class="dot">✎</div><small>Lyrics</small></div>
+      <div class="tline" id="line1"></div>
+      <div class="tnode" id="t-song"><div class="dot">♪</div><small>Song</small></div>
+      <div class="tline" id="line2"></div>
+      <div class="tnode" id="t-listen"><div class="dot">▶</div><small>Listen</small></div>
+    </div>
+
+    <p class="sectionsub" style="margin:22px 0 0">While we compose, here's what gifters say ❤️</p>
+    <div class="quote" id="quoteBox">
+      <p id="quoteText">"I played it for my mom and she cried. Best gift I've ever given."</p>
+      <cite id="quoteCite">— Jordan, surprise for Mom</cite>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= PREVIEW + PAYWALL ========================= -->
+<section id="screen-preview" class="screen">
+  <div class="wrap">
+    <h1 class="sectiontitle">Imagine <span id="prevName">their</span> reaction ❤️</h1>
+    <p class="sectionsub" id="prevTitleSub"></p>
+
+    <div class="player">
+      <button class="playbtn" id="playBtn" aria-label="Play preview">▶</button>
+      <h3 id="prevTitle">Your Song</h3>
+      <p class="pstate" id="prevState">Preview</p>
+      <div class="pbar"><i id="prevBar"></i></div>
+      <div class="ptime"><span id="prevCur">0:00</span><span id="prevDur">1:00</span></div>
+      <audio id="audio" preload="auto"></audio>
+      <details class="lyrbox"><summary>Read the lyrics</summary><pre id="prevLyrics"></pre></details>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <div style="text-align:center"><span class="lovetag">Love it?</span></div>
+      <h2 class="unlock-title" style="text-align:center;font-size:30px;margin-bottom:18px;font-family:'Fraunces';font-weight:800">Unlock the Full Song</h2>
+      <ul class="benefits">
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a9d7e" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Full-length song in studio quality</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a9d7e" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Instant download &amp; email delivery</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a9d7e" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Free revisions if it's not perfect</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a9d7e" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Theirs to keep &amp; share forever</li>
+        <li class="bonus">★ &nbsp;Bonus: a beautiful shareable gift page</li>
+      </ul>
+
+      <div id="upsells"></div>
+
+      <div class="field" style="margin-top:8px">
+        <label>Where should we send the song?</label>
+        <input id="email" type="email" placeholder="you@email.com" />
+      </div>
+
+      <div class="total"><span>Total</span><span class="t-amt" id="totalAmt">$34.99</span></div>
+      <div class="err" id="payErr"></div>
+      <button class="btn" id="payBtn">Get the Full Song →</button>
+      <p class="pay-meta">🔒 Secure checkout · Apple Pay, Google Pay &amp; cards · 100% happiness guarantee</p>
+      <p style="text-align:center;margin-top:14px"><a href="#" id="startOver" style="font-size:13px">← Start a different song</a></p>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Heartnote · Made with care · Every song is original and uniquely yours.</div></footer>
+
+<script>
+(function(){
+  "use strict";
+  var API = "/api/song";
+  var state = { songId:null, song:null, previewSeconds:45, selected:{} };
+
+  // ---- catalog of upsells (keep in sync with create-checkout.mjs) ----
+  var BASE_PRICE = 3499;
+  var UPSELLS = [
+    { id:"rush",        name:"Express priority rendering",      desc:"Skip the queue — your song first.",        cents:1499 },
+    { id:"extended",    name:"Extended full-length version",    desc:"A longer cut with an extra verse.",         cents:1000 },
+    { id:"alt_version", name:"Second version, different style", desc:"Get an alternate take to choose from.",     cents:1500 },
+    { id:"video",       name:"Animated video gift page",        desc:"A shareable lyric-video for socials.",      cents:1900 }
+  ];
+
+  var GENRES = ["Pop","Acoustic","Folk","R&B","Country","Rock","Hip-Hop","Jazz","Lullaby","Cinematic"];
+  var MOODS  = ["Heartfelt","Joyful","Romantic","Nostalgic","Upbeat","Tearjerker","Playful","Epic"];
+  var QUOTES = [
+    ['"I played it for my mom and she cried. Best gift I\'ve ever given."','— Jordan, surprise for Mom'],
+    ['"Our wedding song, made from our story. Absolutely magical."','— Priya & Sam'],
+    ['"My dad has listened to it every day since his birthday."','— Marcus'],
+    ['"Didn\'t expect to get emotional over a gift app. I did."','— Lena']
+  ];
+
+  function $(id){ return document.getElementById(id); }
+  function show(name){
+    ["form","progress","preview"].forEach(function(s){
+      $("screen-"+s).classList.toggle("active", s===name);
+    });
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function track(ev){ try{ fetch(API+"?action=track",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({event:ev})}); }catch(e){} }
+  function money(c){ return "$"+(c/100).toFixed(2); }
+
+  // ---- build chips ----
+  function buildChips(el, items, key, def){
+    items.forEach(function(label,i){
+      var b=document.createElement("button");
+      b.type="button"; b.className="chip"; b.textContent=label;
+      b.setAttribute("aria-pressed", label===def ? "true":"false");
+      b.onclick=function(){
+        el.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed","false");});
+        b.setAttribute("aria-pressed","true"); state[key]=label;
+      };
+      el.appendChild(b);
+    });
+    state[key]=def;
+  }
+  buildChips($("genreChips"), GENRES, "genre", "Pop");
+  buildChips($("moodChips"), MOODS, "mood", "Heartfelt");
+
+  // ---- build upsells ----
+  (function(){
+    var wrap=$("upsells");
+    UPSELLS.forEach(function(u){
+      var lbl=document.createElement("label"); lbl.className="upsell";
+      lbl.innerHTML='<input type="checkbox" data-id="'+u.id+'"/>'+
+        '<span class="u-main"><b>'+u.name+'</b><span>'+u.desc+'</span></span>'+
+        '<span class="u-price">+'+money(u.cents)+'</span>';
+      lbl.querySelector("input").addEventListener("change",function(e){
+        state.selected[u.id]=e.target.checked;
+        if(e.target.checked) track("upsell_select_"+u.id);
+        renderTotal();
+      });
+      wrap.appendChild(lbl);
+    });
+  })();
+  function renderTotal(){
+    var t=BASE_PRICE;
+    UPSELLS.forEach(function(u){ if(state.selected[u.id]) t+=u.cents; });
+    $("totalAmt").textContent=money(t);
+  }
+  renderTotal();
+
+  // ---- form submit ----
+  $("songForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var recipient=$("recipient").value.trim();
+    if(!recipient){ return; }
+    var btn=$("createBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Writing…';
+    $("formErr").classList.remove("show");
+
+    var payload={ action:"lyrics", recipient:recipient, sender:$("sender").value.trim(),
+      relationship:$("relationship").value.trim(), occasion:$("occasion").value.trim(),
+      genre:state.genre, mood:state.mood, memories:$("memories").value.trim() };
+
+    $("progName").textContent=recipient; $("prevName").textContent=recipient;
+    track("start_create");
+    startProgress();
+    show("progress");
+
+    try{
+      var r=await fetch(API+"?action=lyrics",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      var d=await r.json();
+      if(!r.ok){ throw new Error(d.error||"Could not write the song."); }
+      state.songId=d.id; state.song=d;
+      setStep("lyrics","done"); setStep("song","active"); $("line1").classList.add("fill");
+      setProgress(40,"Composing the music…");
+      // kick off audio
+      fetch(API+"?action=generate",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({action:"generate",songId:state.songId})})
+        .catch(function(){});
+      pollStatus();
+    }catch(err){
+      show("form"); btn.disabled=false; btn.innerHTML="Write my song →";
+      $("formErr").textContent=err.message; $("formErr").classList.add("show");
+    }
+  });
+
+  // ---- progress animation ----
+  var progTimer, progVal=5, qi=0;
+  function startProgress(){
+    progVal=5; setProgress(5,"Writing the lyrics…");
+    setStep("lyrics","active"); setStep("song",""); setStep("listen","");
+    $("line1").classList.remove("fill"); $("line2").classList.remove("fill");
+    clearInterval(progTimer);
+    progTimer=setInterval(function(){
+      // ease toward 92% while we wait on the real work
+      if(progVal<92){ progVal += Math.max(0.4,(92-progVal)*0.04); setProgress(progVal); }
+    },700);
+    rotateQuotes();
+  }
+  function setProgress(v,label){
+    progVal=v; $("progFill").style.width=v+"%"; $("progPct").textContent=Math.round(v)+"%";
+    if(label) $("progLabel").textContent=label;
+  }
+  function setStep(name,cls){ var el=$("t-"+name); el.className="tnode"+(cls?" "+cls:""); }
+  var quoteTimer;
+  function rotateQuotes(){
+    clearInterval(quoteTimer);
+    quoteTimer=setInterval(function(){
+      qi=(qi+1)%QUOTES.length;
+      $("quoteText").textContent=QUOTES[qi][0]; $("quoteCite").textContent=QUOTES[qi][1];
+    },4200);
+  }
+
+  // ---- poll generation status ----
+  var pollTimer, pollCount=0;
+  function pollStatus(){
+    clearInterval(pollTimer); pollCount=0;
+    pollTimer=setInterval(async function(){
+      pollCount++;
+      try{
+        var r=await fetch(API+"?action=status",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({action:"status",songId:state.songId})});
+        var d=await r.json();
+        if(d && (d.status==="complete" || d.previewUrl)){
+          clearInterval(pollTimer); clearInterval(progTimer);
+          state.song=Object.assign(state.song||{}, d);
+          finishToPreview();
+        } else if(d && d.status==="no_provider"){
+          // Provider not configured yet — still show the funnel with lyrics.
+          clearInterval(pollTimer); clearInterval(progTimer);
+          state.song=Object.assign(state.song||{}, d);
+          finishToPreview(true);
+        } else if(d && d.status==="failed"){
+          clearInterval(pollTimer); clearInterval(progTimer);
+          finishToPreview(true);
+        }
+      }catch(e){}
+      // Safety: don't poll forever (~3 min). Show preview screen anyway.
+      if(pollCount>60){ clearInterval(pollTimer); clearInterval(progTimer); finishToPreview(true); }
+    },3000);
+  }
+
+  function finishToPreview(noAudio){
+    setStep("lyrics","done"); setStep("song","done"); setStep("listen","done");
+    $("line1").classList.add("fill"); $("line2").classList.add("fill");
+    setProgress(100,"Ready!");
+    track("preview_shown");
+    var s=state.song||{};
+    $("prevTitle").textContent=s.title||("A song for "+($("recipient").value||"you"));
+    $("prevTitleSub").textContent=s.title?("“"+s.title+"”  ·  "+(s.style||"")):"";
+    if(s.lyrics) $("prevLyrics").textContent=s.lyrics;
+    state.previewSeconds=s.previewSeconds||45;
+    setupAudio(s, noAudio);
+    setTimeout(function(){ show("preview"); }, 500);
+  }
+
+  // ---- preview audio with hard cap ----
+  var audio=$("audio"), playing=false;
+  function setupAudio(s, noAudio){
+    $("prevDur").textContent=fmt(state.previewSeconds);
+    if(noAudio || !s.previewUrl){
+      $("prevState").textContent="Preview audio is being finalized — your full song will be emailed.";
+      $("playBtn").style.opacity=".5";
+      return;
+    }
+    audio.src=s.previewUrl;
+    $("prevState").textContent="Playing preview…";
+  }
+  function fmt(sec){ sec=Math.max(0,Math.floor(sec)); return Math.floor(sec/60)+":"+("0"+(sec%60)).slice(-2); }
+  $("playBtn").addEventListener("click", function(){
+    if(!audio.src) return;
+    if(playing){ audio.pause(); } else { audio.play(); track("preview_play"); }
+  });
+  audio.addEventListener("play", function(){ playing=true; $("playBtn").textContent="❚❚"; });
+  audio.addEventListener("pause", function(){ playing=false; $("playBtn").textContent="▶"; });
+  audio.addEventListener("timeupdate", function(){
+    var cap=state.previewSeconds;
+    if(audio.currentTime>=cap){ audio.pause(); audio.currentTime=0; $("prevBar").style.width="100%"; track("preview_complete"); return; }
+    $("prevCur").textContent=fmt(audio.currentTime);
+    $("prevBar").style.width=Math.min(100,(audio.currentTime/cap)*100)+"%";
+  });
+
+  // ---- email lead capture (abandoned-cart) ----
+  $("email").addEventListener("blur", function(){
+    var v=$("email").value.trim();
+    if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) && state.songId){
+      fetch(API+"?action=lead",{method:"POST",headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:"lead",email:v,songId:state.songId,recipient:($("recipient").value||"")})}).catch(function(){});
+    }
+  });
+
+  // ---- checkout ----
+  $("payBtn").addEventListener("click", async function(){
+    var email=$("email").value.trim();
+    var ups=UPSELLS.filter(function(u){return state.selected[u.id];}).map(function(u){return u.id;});
+    var btn=$("payBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Redirecting…';
+    $("payErr").classList.remove("show");
+    track("checkout_click");
+    try{
+      var r=await fetch("/api/create-checkout",{method:"POST",headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({songId:state.songId,email:email,upsells:ups})});
+      var d=await r.json();
+      if(!r.ok || !d.url) throw new Error(d.error||"Could not start checkout.");
+      window.location.href=d.url;
+    }catch(err){
+      btn.disabled=false; btn.innerHTML="Get the Full Song →";
+      $("payErr").textContent=err.message; $("payErr").classList.add("show");
+    }
+  });
+
+  $("startOver").addEventListener("click", function(e){ e.preventDefault(); location.href="/"; });
+
+  // ---- handle return from Stripe ----
+  (function handleReturn(){
+    var q=new URLSearchParams(location.search);
+    var pay=q.get("payment"), sid=q.get("session_id"), song=q.get("song");
+    if(pay==="success" && song && sid){
+      document.body.innerHTML='<div class="wrap" style="text-align:center;padding:80px 20px">'+
+        '<div class="logo" style="font-size:26px;margin-bottom:20px">Heart<b style="color:#d98b6f">note</b>.</div>'+
+        '<h1 style="font-family:Fraunces;font-weight:800;font-size:32px">Confirming your payment…</h1>'+
+        '<p style="color:#7c736b;margin-top:10px"><span class="spin" style="border-color:rgba(217,139,111,.4);border-top-color:#d98b6f"></span> One moment</p></div>';
+      verify(song,sid,0);
+    } else if(pay==="cancelled"){
+      history.replaceState({},"", "/");
+    }
+  })();
+  async function verify(song,sid,tries){
+    try{
+      var r=await fetch("/api/verify-payment",{method:"POST",headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:"verify",songId:song,sessionId:sid})});
+      var d=await r.json();
+      if(d.paid && d.giftUrl){ track("purchase_confirmed"); location.href=d.giftUrl; return; }
+    }catch(e){}
+    if(tries<6){ setTimeout(function(){ verify(song,sid,tries+1); }, 2000); }
+    else { location.href="/gift.html?id="+encodeURIComponent(song); }
+  }
+})();
+</script>
+</body>
+</html>

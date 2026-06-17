@@ -1,0 +1,12 @@
+{
+  "name": "song-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personalized AI song gifts — free preview, paid full song.",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}

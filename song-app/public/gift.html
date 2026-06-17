@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>A song just for you · Heartnote</title>
+<meta name="description" content="Someone made you an original song. Press play." />
+<meta property="og:title" content="🎵 A song made just for you" />
+<meta property="og:description" content="Someone wrote and produced an original song for you. Press play." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,800;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#faf5ee;--card:#fffdfa;--ink:#2a2522;--muted:#7c736b;--accent:#d98b6f;--accent-dk:#c06f53;--line:#ece3d8}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#fbeee6,var(--bg));color:var(--ink);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+  .wrap{max-width:600px;margin:0 auto;padding:40px 20px 60px;text-align:center}
+  .logo{font-family:'Fraunces';font-weight:800;font-size:22px;margin-bottom:30px}
+  .logo b{color:var(--accent)}
+  h1{font-family:'Fraunces';font-weight:800;font-size:clamp(30px,7vw,46px);line-height:1.1;margin-bottom:10px}
+  h1 i{color:var(--accent);font-weight:500}
+  .sub{color:var(--muted);font-size:17px;margin-bottom:28px}
+  .player{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 26px;box-shadow:0 14px 50px rgba(120,90,60,.12)}
+  .art{width:150px;height:150px;border-radius:16px;object-fit:cover;margin:0 auto 18px;display:block;background:#f3e6dc}
+  .playbtn{width:84px;height:84px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:28px;cursor:pointer;margin:6px auto 16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(217,139,111,.4)}
+  .title{font-family:'Fraunces';font-weight:800;font-size:24px}
+  .style{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .pbar{height:8px;background:#efe6db;border-radius:999px;overflow:hidden}
+  .pbar>i{display:block;height:100%;width:0;background:var(--accent)}
+  .ptime{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px}
+  .actions{display:flex;gap:10px;margin-top:18px}
+  .btn{flex:1;border:none;border-radius:999px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .btn.ghost{background:transparent;color:var(--accent-dk);border:1px solid var(--line)}
+  .lyr{margin-top:22px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .lyr h3{font-family:'Fraunces';font-size:18px;margin-bottom:10px}
+  .lyr pre{white-space:pre-wrap;font-family:'Inter';font-size:15px;line-height:1.8;color:#4a423b}
+  .cta{margin-top:30px;font-size:14px;color:var(--muted)}
+  .cta a{color:var(--accent-dk);font-weight:600}
+  .loading,.error{padding:60px 0;color:var(--muted)}
+  .spin{width:22px;height:22px;border:3px solid rgba(217,139,111,.35);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Heart<b>note</b>.</div>
+  <div id="root"><div class="loading"><span class="spin"></span><p style="margin-top:14px">Loading your song…</p></div></div>
+  <p class="cta">Want one of your own? <a href="/">Make a custom song →</a></p>
+</div>
+<div class="toast" id="toast">Link copied!</div>
+<script>
+(function(){
+  var id=new URLSearchParams(location.search).get("id");
+  var root=document.getElementById("root");
+  if(!id){ root.innerHTML='<div class="error">No gift specified.</div>'; return; }
+
+  fetch("/api/song?action=gift&id="+encodeURIComponent(id))
+    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+    .then(function(res){
+      if(!res.ok){ root.innerHTML='<div class="error">'+(res.d.error||"Gift not found.")+'</div>'; return; }
+      render(res.d);
+    })
+    .catch(function(){ root.innerHTML='<div class="error">Something went wrong. Please refresh.</div>'; });
+
+  function fmt(s){ s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+
+  function render(s){
+    var name=s.recipient||"you";
+    if(!s.paid || !s.fullUrl){
+      root.innerHTML='<h1>Almost ready…</h1><p class="sub">This song is being finalized. Check back in a few minutes.</p>';
+      return;
+    }
+    root.innerHTML=
+      '<h1>For <i>'+esc(name)+'</i></h1>'+
+      '<p class="sub">Someone made you an original song. Press play. 🎧</p>'+
+      '<div class="player">'+
+        (s.imageUrl?'<img class="art" src="'+esc(s.imageUrl)+'" alt=""/>':'')+
+        '<button class="playbtn" id="pb">▶</button>'+
+        '<div class="title">'+esc(s.title||"Your Song")+'</div>'+
+        '<div class="style">'+esc(s.style||"")+'</div>'+
+        '<div class="pbar"><i id="bar"></i></div>'+
+        '<div class="ptime"><span id="cur">0:00</span><span id="dur">'+(s.duration?fmt(s.duration):"")+'</span></div>'+
+        '<audio id="au" src="'+esc(s.fullUrl)+'" preload="auto"></audio>'+
+        '<div class="actions">'+
+          '<a class="btn" id="dl" href="'+esc(s.fullUrl)+'" download="heartnote-song.mp3">⬇ Download</a>'+
+          '<button class="btn ghost" id="share">↗ Share</button>'+
+        '</div>'+
+      '</div>'+
+      (s.lyrics?'<div class="lyr"><h3>Lyrics</h3><pre>'+esc(s.lyrics)+'</pre></div>':'');
+
+    var au=document.getElementById("au"),pb=document.getElementById("pb"),playing=false;
+    pb.onclick=function(){ playing?au.pause():au.play(); };
+    au.onplay=function(){ playing=true; pb.textContent="❚❚"; };
+    au.onpause=function(){ playing=false; pb.textContent="▶"; };
+    au.onloadedmetadata=function(){ if(!s.duration) document.getElementById("dur").textContent=fmt(au.duration); };
+    au.ontimeupdate=function(){
+      var d=au.duration||s.duration||1;
+      document.getElementById("cur").textContent=fmt(au.currentTime);
+      document.getElementById("bar").style.width=Math.min(100,(au.currentTime/d)*100)+"%";
+    };
+    document.getElementById("share").onclick=async function(){
+      var url=location.href;
+      if(navigator.share){ try{ await navigator.share({title:"A song just for you",url:url}); return; }catch(e){} }
+      try{ await navigator.clipboard.writeText(url); toast(); }catch(e){ prompt("Copy this link:",url); }
+    };
+  }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(){ var t=document.getElementById("toast"); t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},1800); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Stripe webhooks must read the raw body — make sure this function is not
+# transformed. Netlify Functions v2 already pass the raw Request, so nothing
+# extra is needed here, but we pin Node 20 for stable fetch + crypto support.
+[functions]
+  node_bundler = "esbuild"
+
+[functions."stripe-webhook"]
+  # Webhook signature verification needs the unparsed body.
+  included_files = []
