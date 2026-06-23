@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ============ SEO / META ============ -->
+  <title>Red Shae Gallery — Contemporary Art | Timeless Works, Cinematic Visions</title>
+  <meta name="description" content="Red Shae Gallery is a curated digital exhibition of contemporary and timeless artworks — an immersive, cinematic gallery experience for collectors and admirers of fine art." />
+  <meta name="author" content="Red Shae Gallery" />
+  <meta name="theme-color" content="#0a0807" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Red Shae Gallery — Contemporary Art" />
+  <meta property="og:description" content="A cinematic digital exhibition of contemporary and timeless works." />
+  <meta property="og:image" content="/images/og-cover.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Fonts: elegant serif (Cormorant Garamond) + clean sans (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind via CDN with custom theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:      '#0a0807',   // deep near-black
+            charcoal: '#15110f',
+            burgundy: '#5c1a2b',
+            wine:     '#3a0f1c',
+            gold:     '#c9a227',
+            goldlt:   '#e8d49b',
+            ivory:    '#f3ece1',
+            ash:      '#b8ada0',
+          },
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans:  ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+/* =========================================================================
+   MAISON NOIR — Custom styles (layered on top of Tailwind CDN)
+   ========================================================================= */
+
+:root {
+  --ink: #0a0807;
+  --gold: #c9a227;
+  --goldlt: #e8d49b;
+  --ash: #b8ada0;
+}
+
+html { scroll-behavior: smooth; }
+/* Lenis disables native smooth-scroll when active */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+body { overflow-x: hidden; cursor: none; }
+@media (hover: none), (pointer: coarse) {
+  body { cursor: auto; }
+  .cursor-dot, .cursor-ring { display: none !important; }
+}
+
+/* ---------- FILM GRAIN ---------- */
+.grain {
+  position: fixed; inset: -50%;
+  z-index: 100; pointer-events: none;
+  opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grainShift 0.6s steps(2) infinite;
+}
+@keyframes grainShift {
+  0%   { transform: translate(0,0); }
+  100% { transform: translate(-3%, 2%); }
+}
+
+/* ---------- VIGNETTE ---------- */
+.vignette {
+  position: fixed; inset: 0; z-index: 99; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ---------- DUST / PARTICLE CANVAS ---------- */
+#dust {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  width: 100%; height: 100%;
+}
+
+/* ---------- CUSTOM CURSOR ---------- */
+.cursor-dot, .cursor-ring {
+  position: fixed; top: 0; left: 0; z-index: 200;
+  pointer-events: none; border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+.cursor-dot  { width: 6px; height: 6px; background: var(--gold); }
+.cursor-ring {
+  width: 34px; height: 34px; border: 1px solid rgba(201,162,39,0.5);
+  transition: width .25s ease, height .25s ease, background .25s ease, border-color .25s ease;
+}
+.cursor-ring.grow {
+  width: 64px; height: 64px;
+  background: rgba(201,162,39,0.08); border-color: rgba(201,162,39,0.8);
+}
+
+/* ---------- SCROLL PROGRESS ---------- */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60;
+  background: rgba(255,255,255,0.06);
+}
+.scroll-progress span {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--goldlt));
+  box-shadow: 0 0 12px rgba(201,162,39,0.6);
+}
+
+/* ---------- NAV ---------- */
+#nav.scrolled {
+  background: rgba(10,8,7,0.72);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.navlink { position: relative; color: var(--ash); transition: color .3s; }
+.navlink:hover { color: var(--goldlt); }
+.navlink::after {
+  content: ''; position: absolute; left: 0; bottom: -6px; height: 1px; width: 0;
+  background: var(--gold); transition: width .35s ease;
+}
+.navlink:hover::after { width: 100%; }
+
+#menuBtn.open span:nth-child(1) { transform: translateY(3px) rotate(45deg); }
+#menuBtn.open span:nth-child(2) { transform: translateY(-3px) rotate(-45deg); }
+
+#mobileMenu.open { display: flex; }
+.mobile-link {
+  font-family: "Cormorant Garamond", serif; font-size: 2.5rem; font-weight: 300;
+  color: var(--ash); letter-spacing: .05em; transition: color .3s, transform .3s;
+}
+.mobile-link:hover { color: var(--gold); transform: scale(1.05); }
+
+/* ---------- HERO ---------- */
+.hero-img {
+  transform: scale(1.15);
+  animation: slowZoom 18s ease-out forwards;
+  filter: saturate(1.05) contrast(1.05);
+}
+@keyframes slowZoom { to { transform: scale(1.0); } }
+
+.scroll-arrow {
+  width: 1px; height: 46px; background: linear-gradient(var(--gold), transparent);
+  position: relative; overflow: hidden;
+}
+.scroll-arrow::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 40%;
+  background: var(--goldlt); animation: arrowRun 1.8s ease-in-out infinite;
+}
+@keyframes arrowRun { 0%{transform:translateY(-100%)} 100%{transform:translateY(260%)} }
+
+/* ---------- MASONRY GRID ---------- */
+.masonry { column-count: 1; column-gap: 1.5rem; }
+@media (min-width: 640px) { .masonry { column-count: 2; } }
+@media (min-width: 1024px){ .masonry { column-count: 3; } }
+
+.art-card {
+  position: relative; break-inside: avoid; margin-bottom: 1.5rem;
+  overflow: hidden; border-radius: 2px; cursor: pointer;
+  background: #15110f;
+}
+.art-card img {
+  width: 100%; display: block;
+  transition: transform .8s cubic-bezier(.16,1,.3,1), filter .6s;
+  filter: brightness(.82) saturate(.95);
+}
+.art-card:hover img { transform: scale(1.06); filter: brightness(1.02) saturate(1.05); }
+
+.art-card::after { /* gold glow on hover */
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(201,162,39,0); transition: box-shadow .5s;
+}
+.art-card:hover::after { box-shadow: inset 0 0 0 1px rgba(201,162,39,0.45), 0 24px 60px -20px rgba(0,0,0,.8); }
+
+.art-meta {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 1.5rem; background: linear-gradient(to top, rgba(10,8,7,.92), transparent 70%);
+  opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s;
+}
+.art-card:hover .art-meta { opacity: 1; transform: translateY(0); }
+.art-meta .t { font-family: "Cormorant Garamond", serif; font-size: 1.5rem; line-height: 1.1; color: var(--goldlt); }
+.art-meta .a { font-size: .8rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ash); margin-top: .35rem; }
+
+/* ---------- CAROUSEL ---------- */
+.carousel {
+  display: flex; gap: 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 0 1.5rem 2rem; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--gold) transparent;
+  cursor: grab;
+}
+.carousel.dragging { cursor: grabbing; scroll-snap-type: none; }
+.carousel::-webkit-scrollbar { height: 4px; }
+.carousel::-webkit-scrollbar-thumb { background: rgba(201,162,39,.5); border-radius: 4px; }
+@media (min-width: 1024px) { .carousel { padding-left: max(1.5rem, calc((100vw - 80rem)/2 + 2.5rem)); } }
+
+.exh-lead, .exh-slide {
+  scroll-snap-align: start; flex: 0 0 auto; border-radius: 2px; overflow: hidden;
+}
+.exh-lead {
+  width: 320px; padding: 2.5rem; display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(135deg, var(--wine, #3a0f1c), #15110f);
+  border: 1px solid rgba(201,162,39,.25);
+}
+.exh-slide { width: 300px; height: 420px; position: relative; cursor: pointer; background:#15110f; }
+@media (min-width:640px){ .exh-slide { width: 340px; height: 460px; } }
+.exh-slide img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.78); transition: filter .6s, transform .8s cubic-bezier(.16,1,.3,1); }
+.exh-slide:hover img { filter: brightness(1); transform: scale(1.05); }
+.exh-slide .cap {
+  position: absolute; bottom: 0; inset-inline: 0; padding: 1.25rem;
+  background: linear-gradient(to top, rgba(10,8,7,.9), transparent);
+  font-family: "Cormorant Garamond", serif; font-size: 1.25rem; color: var(--goldlt);
+}
+
+/* ---------- ABOUT / STUDIO IMAGES ---------- */
+.about-frame { aspect-ratio: 4/5; }
+.about-frame img { transition: transform 1.2s cubic-bezier(.16,1,.3,1); }
+
+.studio-card { position: relative; overflow: hidden; border-radius: 2px; aspect-ratio: 4/3; background:#15110f; }
+.studio-card img { width:100%; height:100%; object-fit: cover; filter: brightness(.8) grayscale(.2); transition: transform .9s cubic-bezier(.16,1,.3,1), filter .6s; }
+.studio-card:hover img { transform: scale(1.06); filter: brightness(1) grayscale(0); }
+.studio-card .cap {
+  position:absolute; bottom:0; inset-inline:0; padding:1rem 1.25rem;
+  background: linear-gradient(to top, rgba(10,8,7,.9), transparent);
+  font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color: var(--ash);
+}
+
+/* ---------- LAZY IMAGES ---------- */
+.lazy, .hero-img, .art-card img, .exh-slide img, .studio-card img {
+  opacity: 0; transition: opacity 1s ease;
+}
+.lazy.loaded, .hero-img.loaded, img.loaded { opacity: 1; }
+
+/* ---------- REVEAL ON SCROLL ---------- */
+.reveal { opacity: 0; transform: translateY(40px); }
+.reveal.in { opacity: 1; transform: none; transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
+
+/* ---------- FORMS ---------- */
+.field { position: relative; }
+.field input, .field textarea {
+  width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.18);
+  padding: 1.2rem 0 .6rem; color: var(--ivory, #f3ece1); font-size: 1rem; transition: border-color .4s;
+  resize: vertical;
+}
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--gold); }
+.field label {
+  position: absolute; left: 0; top: 1.2rem; color: var(--ash); pointer-events: none;
+  transition: all .3s ease; font-size: 1rem;
+}
+.field input:focus + label, .field input:not(:placeholder-shown) + label,
+.field textarea:focus + label, .field textarea:not(:placeholder-shown) + label {
+  top: -.4rem; font-size: .7rem; letter-spacing: .15em; text-transform: uppercase; color: var(--gold);
+}
+
+.btn-gold {
+  display: inline-flex; align-items: center; padding: .9rem 2rem;
+  border: 1px solid var(--gold); color: var(--goldlt); background: transparent;
+  font-size: .8rem; letter-spacing: .2em; text-transform: uppercase;
+  transition: background .4s, color .4s, box-shadow .4s; border-radius: 2px;
+}
+.btn-gold:hover { background: var(--gold); color: var(--ink); box-shadow: 0 10px 40px -12px rgba(201,162,39,.6); }
+
+.btn-outline {
+  padding: .9rem 1.6rem; border: 1px solid rgba(255,255,255,.25); color: var(--ivory, #f3ece1);
+  font-size: .75rem; letter-spacing: .18em; text-transform: uppercase; transition: border-color .4s, color .4s; border-radius: 2px;
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+.newsletter-input {
+  background: transparent; border: 1px solid rgba(255,255,255,.18); border-radius: 2px;
+  padding: .9rem 1rem; color: var(--ivory, #f3ece1); font-size: .9rem; transition: border-color .4s;
+}
+.newsletter-input:focus { outline: none; border-color: var(--gold); }
+
+/* ---------- LIGHTBOX ---------- */
+#lightbox.open { display: block; }
+#lightbox .lightbox-inner, #lightbox .lb-nav, #lightbox .lb-close { opacity: 0; }
+#lightbox.shown .lightbox-inner { opacity: 1; transition: opacity .5s ease .05s; }
+#lightbox.shown .lb-nav, #lightbox.shown .lb-close { opacity: 1; transition: opacity .5s ease .2s; }
+
+.lb-image { transition: transform .35s cubic-bezier(.16,1,.3,1); cursor: zoom-in; transform-origin: center center; }
+.lb-image.zoomed { cursor: grab; transition: none; }
+.lb-image.zoomed.panning { cursor: grabbing; }
+
+.lb-close {
+  position: absolute; top: 1.5rem; right: 1.5rem; z-index: 10; width: 46px; height: 46px;
+  border: 1px solid rgba(255,255,255,.2); border-radius: 9999px; background: rgba(10,8,7,.4);
+  transition: transform .4s, border-color .4s; backdrop-filter: blur(6px);
+}
+.lb-close:hover { transform: rotate(90deg); border-color: var(--gold); }
+.lb-close span { position: absolute; top: 50%; left: 50%; width: 16px; height: 1px; background: var(--ivory, #f3ece1); }
+.lb-close span:nth-child(1){ transform: translate(-50%,-50%) rotate(45deg); }
+.lb-close span:nth-child(2){ transform: translate(-50%,-50%) rotate(-45deg); }
+
+.lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+  width: 54px; height: 54px; border-radius: 9999px; border: 1px solid rgba(255,255,255,.15);
+  background: rgba(10,8,7,.4); color: var(--goldlt); font-size: 2rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px);
+  transition: background .4s, border-color .4s, transform .4s;
+}
+.lb-nav:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.lb-prev { left: 1.5rem; } .lb-next { right: 1.5rem; }
+@media (max-width: 1023px){ .lb-prev{ left:.75rem } .lb-next{ right:.75rem } .lb-nav{ width:44px;height:44px;font-size:1.5rem } }
+
+/* ---------- LIGHT MODE ("View in Room") ---------- */
+body.room {
+  --ink: #ece4d8; --ash: #5a5048; --goldlt: #8a6d12; --ivory:#1a1512;
+  background: #ece4d8; color: #1a1512;
+}
+body.room .vignette { background: radial-gradient(ellipse at center, transparent 60%, rgba(120,100,70,0.18) 100%); }
+body.room .grain { opacity: .03; mix-blend-mode: multiply; }
+body.room #nav.scrolled { background: rgba(236,228,216,.8); border-bottom-color: rgba(0,0,0,.08); }
+body.room .art-card img, body.room .exh-slide img, body.room .studio-card img, body.room .hero-img { filter: brightness(1) saturate(1.02); }
+body.room .art-card { background:#d8cdbd; }
+body.room .text-ivory { color:#1a1512 !important; }
+body.room .text-ash, body.room .navlink { color:#6a5f54; }
+
+/* ---------- REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .hero-img { transform: none; }
+  .reveal { opacity: 1; transform: none; }
+  #dust, .grain { display: none; }
+}
+
+</style>
+  <script>document.documentElement.classList.remove('no-js'); document.documentElement.classList.add('js');</script>
+</head>
+
+<body class="bg-ink text-ivory font-sans antialiased selection:bg-burgundy selection:text-ivory">
+
+  <!-- ============ FILM GRAIN + VIGNETTE OVERLAYS (fixed, pointer-events-none) ============ -->
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- ============ PARTICLE / DUST CANVAS ============ -->
+  <canvas id="dust" aria-hidden="true"></canvas>
+
+  <!-- ============ CUSTOM CURSOR (desktop only) ============ -->
+  <div class="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-ring" aria-hidden="true"></div>
+
+  <!-- ============ SCROLL PROGRESS BAR ============ -->
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+  <!-- ============ NAVIGATION ============ -->
+  <header id="nav" class="fixed top-0 inset-x-0 z-50 transition-all duration-500">
+    <nav class="mx-auto max-w-7xl px-6 lg:px-10 h-20 flex items-center justify-between">
+      <a href="#hero" class="logo group flex items-baseline gap-2" aria-label="Red Shae Gallery home">
+        <span class="font-serif text-2xl tracking-[0.2em] text-gold group-hover:text-goldlt transition-colors">RED SHAE</span>
+        <span class="font-serif text-sm tracking-[0.35em] text-ash hidden sm:inline">GALLERY</span>
+      </a>
+
+      <ul class="hidden md:flex items-center gap-10 text-sm tracking-[0.18em] uppercase">
+        <li><a href="#hero" class="navlink">Home</a></li>
+        <li><a href="#collection" class="navlink">Collection</a></li>
+        <li><a href="#exhibitions" class="navlink">Exhibitions</a></li>
+        <li><a href="#about" class="navlink">About</a></li>
+        <li><a href="#contact" class="navlink">Contact</a></li>
+      </ul>
+
+      <div class="flex items-center gap-4">
+        <button id="lightToggle" class="hidden sm:inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase text-ash hover:text-gold transition-colors" aria-label="Toggle light mode">
+          <span class="toggle-icon">◐</span><span class="toggle-label">View in Room</span>
+        </button>
+        <!-- Mobile menu button -->
+        <button id="menuBtn" class="md:hidden relative w-9 h-9 flex flex-col items-center justify-center gap-[5px]" aria-label="Open menu" aria-expanded="false">
+          <span class="block w-6 h-px bg-ivory transition-all"></span>
+          <span class="block w-6 h-px bg-ivory transition-all"></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============ MOBILE MENU OVERLAY ============ -->
+  <div id="mobileMenu" class="fixed inset-0 z-40 bg-ink/98 backdrop-blur-xl flex-col items-center justify-center gap-8 hidden">
+    <a href="#hero"        class="mobile-link">Home</a>
+    <a href="#collection"  class="mobile-link">Collection</a>
+    <a href="#exhibitions" class="mobile-link">Exhibitions</a>
+    <a href="#about"       class="mobile-link">About</a>
+    <a href="#contact"     class="mobile-link">Contact</a>
+  </div>
+
+  <main>
+    <!-- ============ 1. HERO ============ -->
+    <section id="hero" class="relative h-screen w-full overflow-hidden flex items-center justify-center">
+      <div class="hero-bg absolute inset-0" data-parallax="0.3">
+        <img
+          class="hero-img w-full h-full object-cover"
+          data-src="images/hero.jpg"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%2315110f'/%3E%3C/svg%3E"
+          alt="Featured artwork — a dramatic contemporary painting bathed in cinematic light"
+          width="1920" height="1080"
+        />
+      </div>
+      <!-- cinematic gradient overlays -->
+      <div class="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/20 to-ink"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent"></div>
+
+      <div class="relative z-10 text-center px-6">
+        <p class="hero-tagline-top text-gold text-xs sm:text-sm tracking-[0.5em] uppercase mb-6">Est. MMXXVI · Curated Exhibition</p>
+        <h1 class="font-serif text-6xl sm:text-7xl lg:text-9xl font-light tracking-tight leading-none">
+          <span class="hero-word inline-block">Red</span>
+          <span class="hero-word inline-block text-gold italic">Shae</span>
+        </h1>
+        <p class="hero-tagline mt-6 text-ash text-base sm:text-lg tracking-[0.3em] uppercase font-light">Timeless Works &nbsp;·&nbsp; Contemporary Visions</p>
+      </div>
+
+      <!-- scroll prompt -->
+      <a href="#collection" class="scroll-prompt absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 text-ash hover:text-gold transition-colors" aria-label="Scroll to collection">
+        <span class="text-[10px] tracking-[0.4em] uppercase">Scroll</span>
+        <span class="scroll-arrow"></span>
+      </a>
+    </section>
+
+    <!-- ============ 2. COLLECTION ============ -->
+    <section id="collection" class="relative py-28 lg:py-40 px-6 lg:px-10">
+      <div class="mx-auto max-w-7xl">
+        <header class="reveal mb-16 lg:mb-24 max-w-2xl">
+          <p class="text-gold text-xs tracking-[0.4em] uppercase mb-4">I. The Collection</p>
+          <h2 class="font-serif text-5xl lg:text-7xl font-light leading-tight">A gathering of <span class="italic text-goldlt">light & form</span></h2>
+          <p class="mt-6 text-ash leading-relaxed max-w-xl">Each work is selected for its capacity to hold a room in silence. Move slowly. Let the eye linger.</p>
+        </header>
+
+        <!-- Masonry grid (CSS columns) — populated by JS -->
+        <div id="grid" class="masonry"></div>
+      </div>
+    </section>
+
+    <!-- ============ 3. FEATURED SERIES / EXHIBITIONS ============ -->
+    <section id="exhibitions" class="relative py-28 lg:py-40 overflow-hidden">
+      <div class="mx-auto max-w-7xl px-6 lg:px-10">
+        <header class="reveal mb-14 flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p class="text-gold text-xs tracking-[0.4em] uppercase mb-4">II. Featured Series</p>
+            <h2 class="font-serif text-5xl lg:text-7xl font-light leading-tight">Exhibitions <span class="italic text-goldlt">in motion</span></h2>
+          </div>
+          <p class="text-ash text-sm max-w-sm leading-relaxed">Drag, scroll, or swipe to traverse curated themes — each a chapter in an unfolding visual narrative.</p>
+        </header>
+      </div>
+      <!-- horizontal scroll carousel -->
+      <div id="carousel" class="carousel reveal"></div>
+    </section>
+
+    <!-- ============ 4. ABOUT ============ -->
+    <section id="about" class="relative py-28 lg:py-40 px-6 lg:px-10">
+      <div class="mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center">
+        <div class="reveal relative">
+          <div class="about-frame overflow-hidden rounded-sm" data-parallax="0.12">
+            <img
+              class="lazy w-full h-full object-cover"
+              data-src="images/portrait.jpg"
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='5'%3E%3Crect width='4' height='5' fill='%2315110f'/%3E%3C/svg%3E"
+              alt="Portrait of the gallery's founding curator"
+              width="800" height="1000"
+            />
+          </div>
+          <div class="absolute -bottom-6 -right-6 hidden sm:block border border-gold/40 w-40 h-40 -z-0"></div>
+        </div>
+
+        <div class="reveal">
+          <p class="text-gold text-xs tracking-[0.4em] uppercase mb-4">III. The Gallery</p>
+          <h2 class="font-serif text-4xl lg:text-6xl font-light leading-tight">An archive of <span class="italic text-goldlt">quiet intensity</span></h2>
+          <div class="mt-8 space-y-5 text-ash leading-relaxed max-w-xl">
+            <p>Red Shae Gallery began as a private salon — a single dim room where collectors gathered after dusk to sit with paintings the way one sits with old friends. We have since grown, yet the ethos remains: art is not consumed, it is dwelled within.</p>
+            <p>Our curation favours work that rewards patience — surfaces that shift with the light, compositions that reveal a second painting beneath the first. We represent emerging voices alongside established masters, bound by a shared devotion to atmosphere over spectacle.</p>
+          </div>
+          <div class="mt-10 grid grid-cols-3 gap-6 max-w-md">
+            <div><div class="font-serif text-4xl text-gold">120+</div><div class="text-xs tracking-widest uppercase text-ash mt-1">Works held</div></div>
+            <div><div class="font-serif text-4xl text-gold">18</div><div class="text-xs tracking-widest uppercase text-ash mt-1">Artists</div></div>
+            <div><div class="font-serif text-4xl text-gold">MMXXVI</div><div class="text-xs tracking-widest uppercase text-ash mt-1">Founded</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. IN THE STUDIO / PROCESS ============ -->
+    <section id="studio" class="relative py-28 lg:py-40 px-6 lg:px-10 bg-charcoal/40">
+      <div class="mx-auto max-w-7xl">
+        <header class="reveal mb-14 max-w-2xl">
+          <p class="text-gold text-xs tracking-[0.4em] uppercase mb-4">IV. In the Studio</p>
+          <h2 class="font-serif text-5xl lg:text-7xl font-light leading-tight">Where the <span class="italic text-goldlt">work begins</span></h2>
+        </header>
+        <div id="studioGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+    </section>
+
+    <!-- ============ 6. CONTACT / INQUIRY ============ -->
+    <section id="contact" class="relative py-28 lg:py-40 px-6 lg:px-10">
+      <div class="mx-auto max-w-5xl">
+        <header class="reveal text-center mb-16">
+          <p class="text-gold text-xs tracking-[0.4em] uppercase mb-4">V. Inquiries</p>
+          <h2 class="font-serif text-5xl lg:text-7xl font-light leading-tight">Begin a <span class="italic text-goldlt">conversation</span></h2>
+          <p class="mt-6 text-ash max-w-xl mx-auto leading-relaxed">For acquisitions, private viewings, or press, leave word below. We respond to every message personally.</p>
+        </header>
+
+        <form id="inquiryForm" class="reveal grid sm:grid-cols-2 gap-6" novalidate>
+          <div class="field">
+            <input type="text" id="name" name="name" required placeholder=" " />
+            <label for="name">Full Name</label>
+          </div>
+          <div class="field">
+            <input type="email" id="email" name="email" required placeholder=" " />
+            <label for="email">Email Address</label>
+          </div>
+          <div class="field sm:col-span-2">
+            <input type="text" id="subject" name="subject" placeholder=" " />
+            <label for="subject">Subject — work of interest</label>
+          </div>
+          <div class="field sm:col-span-2">
+            <textarea id="message" name="message" rows="4" required placeholder=" "></textarea>
+            <label for="message">Your Message</label>
+          </div>
+          <div class="sm:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <button type="submit" class="btn-gold group">
+              <span>Send Inquiry</span>
+              <span class="ml-3 inline-block transition-transform group-hover:translate-x-1">→</span>
+            </button>
+            <p id="formStatus" class="text-sm text-gold" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+
+        <!-- Newsletter -->
+        <div class="reveal mt-20 border-t border-white/10 pt-12 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 class="font-serif text-2xl text-ivory">The Red Shae Letter</h3>
+            <p class="text-ash text-sm mt-2 max-w-sm">New acquisitions and private previews, sent seldom and with care.</p>
+          </div>
+          <form id="newsletterForm" class="flex gap-3" novalidate>
+            <input type="email" required placeholder="your@email.com" class="newsletter-input flex-1" aria-label="Email for newsletter" />
+            <button type="submit" class="btn-outline whitespace-nowrap">Subscribe</button>
+          </form>
+        </div>
+
+        <!-- Socials -->
+        <div class="reveal mt-12 flex justify-center gap-8 text-xs tracking-[0.3em] uppercase text-ash">
+          <a href="#" class="hover:text-gold transition-colors">Instagram</a>
+          <a href="#" class="hover:text-gold transition-colors">Artsy</a>
+          <a href="#" class="hover:text-gold transition-colors">Pinterest</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-white/10 py-10 px-6 lg:px-10">
+    <div class="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs tracking-widest uppercase text-ash">
+      <div class="flex items-baseline gap-2 font-serif text-lg">
+        <span class="tracking-[0.2em] text-gold">RED SHAE</span><span class="tracking-[0.3em] text-ash text-sm">GALLERY</span>
+      </div>
+      <p>© <span id="year"></span> Red Shae Gallery. All works © their respective artists.</p>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-gold transition-colors">Privacy</a>
+        <a href="#" class="hover:text-gold transition-colors">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ LIGHTBOX MODAL ============ -->
+  <div id="lightbox" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-label="Artwork detail view">
+    <div class="lightbox-backdrop absolute inset-0 bg-ink/95 backdrop-blur-lg"></div>
+
+    <button id="lbClose" class="lb-close" aria-label="Close">
+      <span></span><span></span>
+    </button>
+    <button id="lbPrev" class="lb-nav lb-prev" aria-label="Previous artwork">‹</button>
+    <button id="lbNext" class="lb-nav lb-next" aria-label="Next artwork">›</button>
+
+    <div class="lightbox-inner relative h-full w-full flex flex-col lg:flex-row items-stretch">
+      <!-- image stage (zoom/pan) -->
+      <div class="lb-stage flex-1 relative overflow-hidden flex items-center justify-center p-6 lg:p-12">
+        <img id="lbImage" class="lb-image max-h-full max-w-full object-contain select-none" alt="" draggable="false" />
+        <p class="lb-zoom-hint absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] tracking-[0.3em] uppercase text-ash/60">Click image to zoom · drag to pan</p>
+      </div>
+      <!-- details panel -->
+      <aside class="lb-panel w-full lg:w-[380px] shrink-0 bg-charcoal/80 backdrop-blur-md border-t lg:border-t-0 lg:border-l border-white/10 p-8 lg:p-10 overflow-y-auto">
+        <p id="lbYear" class="text-gold text-xs tracking-[0.4em] uppercase mb-3"></p>
+        <h3 id="lbTitle" class="font-serif text-3xl lg:text-4xl font-light leading-tight"></h3>
+        <p id="lbArtist" class="mt-2 text-ash italic"></p>
+        <dl class="mt-8 space-y-4 text-sm">
+          <div class="flex justify-between gap-4 border-b border-white/10 pb-3"><dt class="text-ash uppercase tracking-widest text-xs">Medium</dt><dd id="lbMedium" class="text-ivory text-right"></dd></div>
+          <div class="flex justify-between gap-4 border-b border-white/10 pb-3"><dt class="text-ash uppercase tracking-widest text-xs">Dimensions</dt><dd id="lbDims" class="text-ivory text-right"></dd></div>
+        </dl>
+        <p id="lbDesc" class="mt-8 text-ash leading-relaxed text-[15px]"></p>
+        <a href="#contact" id="lbInquire" class="btn-gold mt-10 inline-flex">Inquire about this work →</a>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ LIBRARIES (CDN) ============ -->
+  <!-- Lenis smooth scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- App -->
+  <script>
+/* =========================================================================
+   RED SHAE GALLERY — Gallery Data
+   -------------------------------------------------------------------------
+   This is the ONLY file you need to edit to swap in your own artworks.
+
+   • Drop your high-res images in the /images folder.
+   • For best results provide a WebP + JPG pair. The code will try the
+     .webp first and fall back to the listed `src` automatically.
+       e.g.  src: "images/art1.jpg"   →  also looks for "images/art1.webp"
+   • `series` groups a work into the Exhibitions carousel.
+   • Order here = order on the page.
+   ========================================================================= */
+
+const ARTWORKS = [
+  {
+    id: 1,
+    title: "Crimson Threshold",
+    artist: "Élise Marchand",
+    year: "2024",
+    medium: "Oil & gold leaf on linen",
+    dimensions: "180 × 140 cm",
+    src: "images/art1.jpg",
+    series: "Nocturnes",
+    description:
+      "A doorway dissolving into deep burgundy shadow. Marchand builds the surface in dozens of glazes so the red seems lit from within — a threshold the eye is invited to cross but the body cannot.",
+  },
+  {
+    id: 2,
+    title: "Gilded Silence",
+    artist: "Tomás Vega",
+    year: "2023",
+    medium: "Mixed media on panel",
+    dimensions: "120 × 120 cm",
+    src: "images/art2.jpg",
+    series: "Nocturnes",
+    description:
+      "Flecks of gold suspended in near-black resin. In raking light the work reads as a constellation; head-on, an empty room. A meditation on what presence and absence share.",
+  },
+  {
+    id: 3,
+    title: "Ivory Requiem",
+    artist: "Hana Okafor",
+    year: "2025",
+    medium: "Acrylic and ash on canvas",
+    dimensions: "150 × 200 cm",
+    src: "images/art3.jpg",
+    series: "Pale Forms",
+    description:
+      "A vast field of bone-white broken by a single drawn breath of charcoal. Okafor speaks of painting 'the moment after sound' — the held quiet that follows a last note.",
+  },
+  {
+    id: 4,
+    title: "The Velvet Hour",
+    artist: "Élise Marchand",
+    year: "2024",
+    medium: "Oil on canvas",
+    dimensions: "100 × 80 cm",
+    src: "images/art4.jpg",
+    series: "Nocturnes",
+    description:
+      "Dusk rendered as fabric. The horizon folds like drapery, and a thin seam of gold marks where day was last seen. Intimate in scale, immense in feeling.",
+  },
+  {
+    id: 5,
+    title: "Burnished Idol",
+    artist: "Rafael Sørensen",
+    year: "2022",
+    medium: "Bronze pigment on board",
+    dimensions: "90 × 70 cm",
+    src: "images/art5.jpg",
+    series: "Relics",
+    description:
+      "A form that hovers between figure and vessel, its surface worked until it holds light like aged metal. Sørensen treats paint as patina — beauty earned through time.",
+  },
+  {
+    id: 6,
+    title: "Wine-Dark Sea",
+    artist: "Hana Okafor",
+    year: "2023",
+    medium: "Oil and wax on linen",
+    dimensions: "160 × 220 cm",
+    src: "images/art6.jpg",
+    series: "Pale Forms",
+    description:
+      "Homer's epithet made paint. Layers of deep red and indigo churn beneath a waxed surface, the whole canvas tilting like a horizon seen from a ship at night.",
+  },
+  {
+    id: 7,
+    title: "Reliquary No. 9",
+    artist: "Rafael Sørensen",
+    year: "2024",
+    medium: "Gold leaf and tar on panel",
+    dimensions: "110 × 90 cm",
+    src: "images/art7.jpg",
+    series: "Relics",
+    description:
+      "An altar without a saint. The gold ground of medieval icons is preserved, but the holy figure is replaced by a slow black pour — devotion redirected toward the unknown.",
+  },
+  {
+    id: 8,
+    title: "Last Light, Interior",
+    artist: "Tomás Vega",
+    year: "2025",
+    medium: "Oil on board",
+    dimensions: "75 × 95 cm",
+    src: "images/art8.jpg",
+    series: "Nocturnes",
+    description:
+      "A single window admits the day's final gold into a room of deep umber. Vega paints rooms the way others paint portraits — as carriers of a particular, fleeting mood.",
+  },
+  {
+    id: 9,
+    title: "Ash Madonna",
+    artist: "Hana Okafor",
+    year: "2024",
+    medium: "Charcoal and gesso on canvas",
+    dimensions: "200 × 130 cm",
+    src: "images/art9.jpg",
+    series: "Pale Forms",
+    description:
+      "A figure emerging from and returning to dust in the same gesture. Drawn, half-erased, and drawn again — the labour of looking left visible on the surface.",
+  },
+];
+
+/* Behind-the-scenes / process images for the "In the Studio" section. */
+const STUDIO = [
+  { src: "images/studio1.jpg", caption: "First light in the Marchand studio" },
+  { src: "images/studio2.jpg", caption: "Grinding pigment by hand" },
+  { src: "images/studio3.jpg", caption: "A work mid-glaze, drying overnight" },
+];
+
+/* Exhibition definitions — title + intro shown on the carousel cards' lead slide.
+   `key` must match the `series` field on the artworks above. */
+const EXHIBITIONS = [
+  { key: "Nocturnes",  blurb: "Works of the deep evening — burgundy, gold, and the light that survives nightfall." },
+  { key: "Pale Forms", blurb: "Studies in white, ash, and absence. The quiet end of the spectrum." },
+  { key: "Relics",     blurb: "Surfaces aged like metal and gilt. Beauty as something time leaves behind." },
+];
+
+</script>
+  <script>
+/* =========================================================================
+   MAISON NOIR — App logic
+   Vanilla JS · GSAP/ScrollTrigger · Lenis (all optional, degrades gracefully)
+   ========================================================================= */
+(function () {
+  "use strict";
+
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  const $  = (s, c = document) => c.querySelector(s);
+  const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+
+  /* ----------------------------------------------------------------------
+     Helper: build a <picture> with WebP fallback. Lazy via data-src.
+     ---------------------------------------------------------------------- */
+  function webpFrom(src) { return src.replace(/\.(jpg|jpeg|png)$/i, ".webp"); }
+
+  function lazyImg(src, alt, cls, w, h) {
+    return `<img class="lazy ${cls || ""}" data-src="${src}" data-webp="${webpFrom(src)}"
+      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%2315110f'/%3E%3C/svg%3E"
+      alt="${alt}" loading="lazy" ${w ? `width="${w}"` : ""} ${h ? `height="${h}"` : ""} />`;
+  }
+
+  /* ----------------------------------------------------------------------
+     1. RENDER — Collection grid
+     ---------------------------------------------------------------------- */
+  function renderCollection() {
+    const grid = $("#grid");
+    if (!grid || typeof ARTWORKS === "undefined") return;
+    grid.innerHTML = ARTWORKS.map((a, i) => `
+      <figure class="art-card group" data-index="${i}" tabindex="0" role="button"
+              aria-label="View ${a.title} by ${a.artist}">
+        ${lazyImg(a.src, `${a.title} — ${a.artist}, ${a.year}`, "")}
+        <figcaption class="art-meta">
+          <span class="t">${a.title}</span>
+          <span class="a">${a.artist} · ${a.year}</span>
+        </figcaption>
+      </figure>`).join("");
+
+    $$(".art-card", grid).forEach((card) => {
+      const open = () => openLightbox(+card.dataset.index);
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+      });
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     2. RENDER — Exhibitions carousel
+     ---------------------------------------------------------------------- */
+  function renderExhibitions() {
+    const wrap = $("#carousel");
+    if (!wrap || typeof EXHIBITIONS === "undefined") return;
+    let html = "";
+    EXHIBITIONS.forEach((ex) => {
+      html += `<div class="exh-lead">
+        <p class="text-gold text-xs tracking-[0.4em] uppercase mb-3">Series</p>
+        <h3 class="font-serif text-4xl text-goldlt leading-none">${ex.key}</h3>
+        <p class="text-ash text-sm mt-4 leading-relaxed">${ex.blurb}</p>
+      </div>`;
+      ARTWORKS.filter((a) => a.series === ex.key).forEach((a) => {
+        const idx = ARTWORKS.indexOf(a);
+        html += `<div class="exh-slide" data-index="${idx}" role="button" tabindex="0" aria-label="View ${a.title}">
+          ${lazyImg(a.src, `${a.title} — ${a.artist}`, "")}
+          <div class="cap">${a.title}</div>
+        </div>`;
+      });
+    });
+    wrap.innerHTML = html;
+
+    $$(".exh-slide", wrap).forEach((s) => {
+      const open = () => openLightbox(+s.dataset.index);
+      s.addEventListener("click", (e) => { if (!wrap.dataset.dragged) open(); });
+      s.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+    });
+
+    enableDragScroll(wrap);
+  }
+
+  /* drag-to-scroll for the carousel (desktop) */
+  function enableDragScroll(el) {
+    let down = false, startX, startScroll, moved;
+    el.addEventListener("pointerdown", (e) => {
+      down = true; moved = false; el.classList.add("dragging");
+      startX = e.pageX; startScroll = el.scrollLeft; delete el.dataset.dragged;
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!down) return;
+      const dx = e.pageX - startX;
+      if (Math.abs(dx) > 6) { moved = true; el.dataset.dragged = "1"; }
+      el.scrollLeft = startScroll - dx;
+    });
+    const up = () => { down = false; el.classList.remove("dragging"); setTimeout(() => delete el.dataset.dragged, 50); };
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointerleave", up);
+  }
+
+  /* ----------------------------------------------------------------------
+     3. RENDER — Studio grid
+     ---------------------------------------------------------------------- */
+  function renderStudio() {
+    const grid = $("#studioGrid");
+    if (!grid || typeof STUDIO === "undefined") return;
+    grid.innerHTML = STUDIO.map((s) => `
+      <figure class="studio-card reveal">
+        ${lazyImg(s.src, s.caption, "")}
+        <figcaption class="cap">${s.caption}</figcaption>
+      </figure>`).join("");
+  }
+
+  /* ----------------------------------------------------------------------
+     4. LAZY LOADING (IntersectionObserver) + WebP fallback
+     ---------------------------------------------------------------------- */
+  function initLazy() {
+    const loadImg = (img) => {
+      const webp = img.dataset.webp;
+      const jpg = img.dataset.src;
+      if (!jpg) return;
+      // Try WebP; if it fails, fall back to the original src.
+      const test = new Image();
+      test.onload = () => { img.src = webp; img.classList.add("loaded"); };
+      test.onerror = () => { img.src = jpg; img.classList.add("loaded"); };
+      // Only attempt webp if a distinct path was provided
+      if (webp && webp !== jpg) test.src = webp; else { img.src = jpg; img.classList.add("loaded"); }
+      img.addEventListener("error", () => { if (img.src !== location.href + jpg) img.src = jpg; }, { once: true });
+      delete img.dataset.src;
+    };
+
+    const targets = $$("img[data-src]");
+    if (!("IntersectionObserver" in window)) { targets.forEach(loadImg); return; }
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { loadImg(e.target); obs.unobserve(e.target); }
+      });
+    }, { rootMargin: "200px 0px" });
+    targets.forEach((t) => io.observe(t));
+  }
+
+  /* ----------------------------------------------------------------------
+     5. LIGHTBOX
+     ---------------------------------------------------------------------- */
+  const lb = {
+    el: null, img: null, current: 0,
+    zoom: 1, panX: 0, panY: 0, panning: false, lastSpace: null,
+  };
+
+  function openLightbox(index) {
+    lb.el = lb.el || $("#lightbox");
+    lb.img = lb.img || $("#lbImage");
+    lb.current = index;
+    populateLightbox(index);
+    lb.el.classList.add("open");
+    document.body.style.overflow = "hidden";
+    if (window.__lenis) window.__lenis.stop();
+    requestAnimationFrame(() => lb.el.classList.add("shown"));
+    $("#lbClose").focus();
+  }
+
+  function populateLightbox(index) {
+    const a = ARTWORKS[index];
+    resetZoom();
+    // load full-res, prefer webp
+    const webp = webpFrom(a.src);
+    const apply = (s) => { lb.img.src = s; };
+    const t = new Image();
+    t.onload = () => apply(webp);
+    t.onerror = () => apply(a.src);
+    if (webp !== a.src) t.src = webp; else apply(a.src);
+
+    lb.img.alt = `${a.title} by ${a.artist}, ${a.year}`;
+    $("#lbYear").textContent = a.year;
+    $("#lbTitle").textContent = a.title;
+    $("#lbArtist").textContent = a.artist;
+    $("#lbMedium").textContent = a.medium;
+    $("#lbDims").textContent = a.dimensions;
+    $("#lbDesc").textContent = a.description;
+  }
+
+  function closeLightbox() {
+    if (!lb.el) return;
+    lb.el.classList.remove("shown");
+    setTimeout(() => {
+      lb.el.classList.remove("open");
+      document.body.style.overflow = "";
+      if (window.__lenis) window.__lenis.start();
+    }, 300);
+  }
+
+  function nav(dir) {
+    lb.current = (lb.current + dir + ARTWORKS.length) % ARTWORKS.length;
+    populateLightbox(lb.current);
+  }
+
+  /* zoom + pan */
+  function resetZoom() {
+    lb.zoom = 1; lb.panX = 0; lb.panY = 0;
+    if (lb.img) { lb.img.style.transform = "scale(1)"; lb.img.classList.remove("zoomed", "panning"); }
+  }
+  function applyTransform() {
+    lb.img.style.transform = `translate(${lb.panX}px, ${lb.panY}px) scale(${lb.zoom})`;
+  }
+
+  function initLightboxControls() {
+    const el = $("#lightbox");
+    if (!el) return;
+    lb.el = el; lb.img = $("#lbImage");
+
+    $("#lbClose").addEventListener("click", closeLightbox);
+    $("#lbNext").addEventListener("click", () => nav(1));
+    $("#lbPrev").addEventListener("click", () => nav(-1));
+    $(".lightbox-backdrop").addEventListener("click", closeLightbox);
+    $("#lbInquire").addEventListener("click", closeLightbox);
+
+    // keyboard
+    document.addEventListener("keydown", (e) => {
+      if (!el.classList.contains("open")) return;
+      if (e.key === "Escape") closeLightbox();
+      else if (e.key === "ArrowRight") nav(1);
+      else if (e.key === "ArrowLeft") nav(-1);
+    });
+
+    // click to zoom toggle
+    lb.img.addEventListener("click", (e) => {
+      if (lb.zoom === 1) {
+        lb.zoom = 2.2;
+        lb.img.classList.add("zoomed");
+      } else {
+        resetZoom(); return;
+      }
+      applyTransform();
+    });
+
+    // drag to pan when zoomed
+    let sx, sy, spx, spy;
+    lb.img.addEventListener("pointerdown", (e) => {
+      if (lb.zoom === 1) return;
+      lb.panning = true; lb.img.classList.add("panning");
+      sx = e.clientX; sy = e.clientY; spx = lb.panX; spy = lb.panY;
+      lb.img.setPointerCapture(e.pointerId);
+    });
+    lb.img.addEventListener("pointermove", (e) => {
+      if (!lb.panning) return;
+      lb.panX = spx + (e.clientX - sx);
+      lb.panY = spy + (e.clientY - sy);
+      applyTransform();
+    });
+    const endPan = () => { lb.panning = false; lb.img.classList.remove("panning"); };
+    lb.img.addEventListener("pointerup", endPan);
+    lb.img.addEventListener("pointercancel", endPan);
+
+    // wheel zoom
+    $(".lb-stage").addEventListener("wheel", (e) => {
+      e.preventDefault();
+      lb.zoom = Math.min(4, Math.max(1, lb.zoom + (e.deltaY < 0 ? 0.2 : -0.2)));
+      if (lb.zoom === 1) { resetZoom(); } else { lb.img.classList.add("zoomed"); applyTransform(); }
+    }, { passive: false });
+
+    // touch swipe to navigate (when not zoomed)
+    let tsx = 0;
+    lb.img.addEventListener("touchstart", (e) => { tsx = e.touches[0].clientX; }, { passive: true });
+    lb.img.addEventListener("touchend", (e) => {
+      if (lb.zoom !== 1) return;
+      const dx = e.changedTouches[0].clientX - tsx;
+      if (Math.abs(dx) > 60) nav(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  }
+
+  /* ----------------------------------------------------------------------
+     6. NAV / mobile menu / progress bar
+     ---------------------------------------------------------------------- */
+  function initNav() {
+    const nav = $("#nav");
+    const onScroll = () => {
+      nav.classList.toggle("scrolled", window.scrollY > 40);
+      const h = document.documentElement;
+      const p = h.scrollTop / (h.scrollHeight - h.clientHeight);
+      const bar = $(".scroll-progress span");
+      if (bar) bar.style.width = (p * 100).toFixed(2) + "%";
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const btn = $("#menuBtn"), menu = $("#mobileMenu");
+    btn.addEventListener("click", () => {
+      const open = menu.classList.toggle("open");
+      btn.classList.toggle("open", open);
+      btn.setAttribute("aria-expanded", open);
+      document.body.style.overflow = open ? "hidden" : "";
+    });
+    $$(".mobile-link", menu).forEach((l) => l.addEventListener("click", () => {
+      menu.classList.remove("open"); btn.classList.remove("open");
+      btn.setAttribute("aria-expanded", "false"); document.body.style.overflow = "";
+    }));
+
+    // light mode toggle
+    const toggle = $("#lightToggle");
+    if (toggle) toggle.addEventListener("click", () => {
+      const on = document.body.classList.toggle("room");
+      $(".toggle-label", toggle).textContent = on ? "Gallery Dark" : "View in Room";
+      try { localStorage.setItem("mn-room", on ? "1" : "0"); } catch (e) {}
+    });
+    try { if (localStorage.getItem("mn-room") === "1") { document.body.classList.add("room"); $(".toggle-label", toggle).textContent = "Gallery Dark"; } } catch (e) {}
+  }
+
+  /* ----------------------------------------------------------------------
+     7. SMOOTH SCROLL (Lenis) + anchor links
+     ---------------------------------------------------------------------- */
+  function initSmoothScroll() {
+    if (prefersReduced || typeof Lenis === "undefined") {
+      // fallback: native smooth anchor scrolling already via CSS
+      bindAnchors(null);
+      return;
+    }
+    const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true });
+    window.__lenis = lenis;
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    if (window.ScrollTrigger) { lenis.on("scroll", ScrollTrigger.update); }
+    bindAnchors(lenis);
+  }
+
+  function bindAnchors(lenis) {
+    $$('a[href^="#"]').forEach((a) => {
+      a.addEventListener("click", (e) => {
+        const id = a.getAttribute("href");
+        if (id.length < 2) return;
+        const target = document.querySelector(id);
+        if (!target) return;
+        e.preventDefault();
+        if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.4 });
+        else target.scrollIntoView({ behavior: "smooth" });
+      });
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     8. SCROLL REVEAL + PARALLAX (GSAP if available, else IO fallback)
+     ---------------------------------------------------------------------- */
+  function initReveal() {
+    if (prefersReduced) { $$(".reveal").forEach((r) => r.classList.add("in")); return; }
+
+    if (window.gsap && window.ScrollTrigger) {
+      gsap.registerPlugin(ScrollTrigger);
+
+      $$(".reveal").forEach((el) => {
+        ScrollTrigger.create({
+          trigger: el, start: "top 85%",
+          onEnter: () => el.classList.add("in"),
+        });
+      });
+
+      // hero word stagger
+      gsap.from(".hero-word", { y: 60, opacity: 0, duration: 1.4, ease: "power3.out", stagger: 0.15, delay: 0.2 });
+      gsap.from(".hero-tagline-top, .hero-tagline", { y: 20, opacity: 0, duration: 1.2, ease: "power2.out", stagger: 0.2, delay: 0.6 });
+
+      // parallax on tagged elements
+      $$("[data-parallax]").forEach((el) => {
+        const amt = parseFloat(el.dataset.parallax) || 0.2;
+        gsap.to(el, {
+          yPercent: amt * 22,
+          ease: "none",
+          scrollTrigger: { trigger: el.closest("section") || el, start: "top bottom", end: "bottom top", scrub: true },
+        });
+      });
+
+      // gentle stagger reveal for art cards
+      ScrollTrigger.batch(".art-card", {
+        start: "top 90%",
+        onEnter: (els) => gsap.from(els, { y: 50, opacity: 0, duration: 1, ease: "power3.out", stagger: 0.12, overwrite: true }),
+      });
+    } else {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      $$(".reveal").forEach((r) => io.observe(r));
+    }
+  }
+
+  /* ----------------------------------------------------------------------
+     9. CUSTOM CURSOR
+     ---------------------------------------------------------------------- */
+  function initCursor() {
+    if (isTouch) return;
+    const dot = $(".cursor-dot"), ring = $(".cursor-ring");
+    if (!dot || !ring) return;
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    window.addEventListener("mousemove", (e) => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+    });
+    (function loop() {
+      rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+      requestAnimationFrame(loop);
+    })();
+    const grow = () => ring.classList.add("grow");
+    const shrink = () => ring.classList.remove("grow");
+    document.addEventListener("mouseover", (e) => {
+      if (e.target.closest("a, button, .art-card, .exh-slide, input, textarea, [role='button']")) grow();
+    });
+    document.addEventListener("mouseout", (e) => {
+      if (e.target.closest("a, button, .art-card, .exh-slide, input, textarea, [role='button']")) shrink();
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     10. DUST / PARTICLES (canvas)
+     ---------------------------------------------------------------------- */
+  function initDust() {
+    if (prefersReduced) return;
+    const c = $("#dust");
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    let w, h, motes = [];
+    const COUNT = window.innerWidth < 768 ? 28 : 60;
+
+    function resize() {
+      w = c.width = window.innerWidth * devicePixelRatio;
+      h = c.height = window.innerHeight * devicePixelRatio;
+      c.style.width = window.innerWidth + "px";
+      c.style.height = window.innerHeight + "px";
+    }
+    function spawn() {
+      motes = Array.from({ length: COUNT }, () => ({
+        x: Math.random() * w, y: Math.random() * h,
+        r: (Math.random() * 1.6 + 0.4) * devicePixelRatio,
+        vx: (Math.random() - 0.5) * 0.2 * devicePixelRatio,
+        vy: (Math.random() - 0.5) * 0.15 * devicePixelRatio,
+        a: Math.random() * 0.5 + 0.1, tw: Math.random() * 0.02 + 0.005, t: Math.random() * Math.PI * 2,
+      }));
+    }
+    function frame() {
+      ctx.clearRect(0, 0, w, h);
+      for (const m of motes) {
+        m.x += m.vx; m.y += m.vy; m.t += m.tw;
+        if (m.x < 0) m.x = w; if (m.x > w) m.x = 0;
+        if (m.y < 0) m.y = h; if (m.y > h) m.y = 0;
+        const alpha = m.a * (0.6 + 0.4 * Math.sin(m.t));
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201,162,39,${alpha})`;
+        ctx.shadowBlur = 6 * devicePixelRatio; ctx.shadowColor = "rgba(232,212,155,0.5)";
+        ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    resize(); spawn(); frame();
+    let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { resize(); spawn(); }, 200); });
+  }
+
+  /* ----------------------------------------------------------------------
+     11. FORMS (front-end only — wire to your backend / Netlify Forms / Formspree)
+     ---------------------------------------------------------------------- */
+  function initForms() {
+    const form = $("#inquiryForm"), status = $("#formStatus");
+    if (form) form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) { status.textContent = "Please complete the required fields."; return; }
+      status.textContent = "Sending…";
+      // Simulated success — replace with real fetch() to your endpoint.
+      setTimeout(() => { status.textContent = "Thank you — we will be in touch shortly."; form.reset(); }, 900);
+    });
+
+    const nl = $("#newsletterForm");
+    if (nl) nl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = nl.querySelector("input");
+      if (!input.checkValidity()) return;
+      const btn = nl.querySelector("button");
+      btn.textContent = "Subscribed ✓"; input.value = ""; input.disabled = true;
+      setTimeout(() => { btn.textContent = "Subscribe"; input.disabled = false; }, 2500);
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     INIT
+     ---------------------------------------------------------------------- */
+  function init() {
+    $("#year").textContent = new Date().getFullYear();
+    renderCollection();
+    renderExhibitions();
+    renderStudio();
+    initLazy();
+    initLightboxControls();
+    initNav();
+    initSmoothScroll();
+    initReveal();
+    initCursor();
+    initDust();
+    initForms();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+
+</script>
+</body>
+</html>
