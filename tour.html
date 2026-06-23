@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Red Shae Gallery — 360° Virtual Tour</title>
+  <meta name="description" content="Step inside Red Shae Gallery — an immersive 360° walkthrough. Swipe to glide forward, drag to look around, tap the works for details." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css" />
+
+  <style>
+    :root{ --ink:#0a0807; --gold:#c9a227; --goldlt:#e8d49b; --ash:#b8ada0; --ivory:#f3ece1; }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ margin:0; height:100%; background:var(--ink); color:var(--ivory);
+      font-family:Inter,system-ui,sans-serif; overflow:hidden; overscroll-behavior:none; }
+    #pano{ position:fixed; inset:0; background:var(--ink); }
+
+    /* film grain + vignette for cinematic feel */
+    .grain,.vignette{ position:fixed; inset:0; pointer-events:none; z-index:30; }
+    .vignette{ background:radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.6) 100%); }
+    .grain{ opacity:.05; mix-blend-mode:overlay; z-index:31;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+    /* ---------- SPLASH ---------- */
+    #splash{ position:fixed; inset:0; z-index:60; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center; padding:2rem;
+      background:radial-gradient(ellipse at center,#1a1210,#070504); transition:opacity .9s ease; }
+    #splash.hide{ opacity:0; pointer-events:none; }
+    #splash .kicker{ color:var(--gold); letter-spacing:.5em; text-transform:uppercase; font-size:.7rem; margin-bottom:1.4rem; }
+    #splash h1{ font-family:"Cormorant Garamond",serif; font-weight:300; font-size:clamp(2.8rem,12vw,6rem);
+      line-height:.95; margin:0; }
+    #splash h1 .g{ color:var(--gold); font-style:italic; }
+    #splash p{ color:var(--ash); letter-spacing:.25em; text-transform:uppercase; font-size:.72rem; margin:1.2rem 0 2.4rem; }
+    .enter{ appearance:none; border:1px solid var(--gold); background:transparent; color:var(--goldlt);
+      padding:1rem 2.6rem; letter-spacing:.25em; text-transform:uppercase; font-size:.78rem; cursor:pointer;
+      border-radius:2px; transition:background .4s,color .4s,box-shadow .4s; }
+    .enter:hover{ background:var(--gold); color:var(--ink); box-shadow:0 12px 40px -12px rgba(201,162,39,.6); }
+    #splash .note{ margin-top:2rem; max-width:30rem; color:#7a7066; font-size:.72rem; letter-spacing:.06em;
+      text-transform:none; line-height:1.6; }
+
+    /* ---------- TOP BAR ---------- */
+    #topbar{ position:fixed; top:0; left:0; right:0; z-index:40; display:flex; align-items:center;
+      justify-content:space-between; padding:1rem 1.2rem; pointer-events:none;
+      background:linear-gradient(to bottom, rgba(7,5,4,.75), transparent); }
+    #topbar .brand{ font-family:"Cormorant Garamond",serif; font-size:1.15rem; letter-spacing:.18em; }
+    #topbar .brand b{ color:var(--gold); font-weight:500; } #topbar .brand span{ color:var(--ash); font-size:.7rem; letter-spacing:.3em; }
+    #roomName{ font-family:"Cormorant Garamond",serif; font-style:italic; color:var(--goldlt); font-size:1rem; }
+
+    /* ---------- BOTTOM CONTROLS ---------- */
+    #controls{ position:fixed; bottom:0; left:0; right:0; z-index:40; display:flex; flex-direction:column;
+      align-items:center; gap:.7rem; padding:1.2rem 1rem calc(1.2rem + env(safe-area-inset-bottom));
+      background:linear-gradient(to top, rgba(7,5,4,.82), transparent); }
+    .dots{ display:flex; gap:.6rem; }
+    .dots i{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); transition:all .4s; }
+    .dots i.on{ background:var(--gold); transform:scale(1.35); box-shadow:0 0 10px rgba(201,162,39,.7); }
+    .row{ display:flex; align-items:center; gap:.9rem; }
+    .navbtn{ appearance:none; border:1px solid rgba(255,255,255,.22); background:rgba(10,8,7,.4);
+      color:var(--ivory); border-radius:9999px; width:48px; height:48px; font-size:1.2rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:.35s; }
+    .navbtn:hover:not(:disabled){ border-color:var(--gold); color:var(--gold); }
+    .navbtn:disabled{ opacity:.3; cursor:default; }
+    .walk{ appearance:none; border:1px solid var(--gold); background:rgba(201,162,39,.1); color:var(--goldlt);
+      padding:.85rem 1.8rem; border-radius:9999px; letter-spacing:.18em; text-transform:uppercase; font-size:.74rem;
+      cursor:pointer; backdrop-filter:blur(6px); transition:.35s; white-space:nowrap; }
+    .walk:hover:not(:disabled){ background:var(--gold); color:var(--ink); }
+    .walk:disabled{ opacity:.35; cursor:default; }
+    .hint{ color:var(--ash); font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; opacity:.8; }
+
+    /* ---------- PANNELLUM HOTSPOTS ---------- */
+    .pnlm-hotspot.hs-art{ width:34px; height:34px; margin:-17px 0 0 -17px; background:none; }
+    .hs-art .ring{ position:absolute; inset:0; border:1px solid var(--goldlt); border-radius:50%; }
+    .hs-art .core{ position:absolute; inset:11px; border-radius:50%; background:var(--gold);
+      box-shadow:0 0 14px rgba(201,162,39,.9); animation:pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse{ 0%,100%{ transform:scale(1); opacity:1 } 50%{ transform:scale(1.5); opacity:.6 } }
+    .hs-art .lbl{ position:absolute; left:50%; top:130%; transform:translateX(-50%); white-space:nowrap;
+      font-family:"Cormorant Garamond",serif; color:var(--goldlt); font-size:1rem; text-shadow:0 2px 8px #000;
+      opacity:0; transition:opacity .3s; pointer-events:none; }
+    .hs-art:hover .lbl{ opacity:1; }
+
+    .pnlm-hotspot.hs-walk{ width:64px; height:64px; margin:-32px 0 0 -32px; cursor:pointer; }
+    .hs-walk .arrow{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      color:var(--goldlt); font-size:1.6rem; border:1px solid rgba(201,162,39,.5); border-radius:50%;
+      background:rgba(10,8,7,.35); backdrop-filter:blur(4px); animation:bob 1.8s ease-in-out infinite; }
+    @keyframes bob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-6px) } }
+
+    /* ---------- ARTWORK DETAIL PANEL ---------- */
+    #art{ position:fixed; z-index:50; top:0; right:0; height:100%; width:min(380px,86vw);
+      background:rgba(16,12,11,.92); backdrop-filter:blur(14px); border-left:1px solid rgba(255,255,255,.1);
+      padding:2rem 1.6rem; transform:translateX(105%); transition:transform .5s cubic-bezier(.16,1,.3,1);
+      overflow-y:auto; }
+    #art.open{ transform:none; }
+    #art .close{ position:absolute; top:1rem; right:1rem; width:40px; height:40px; border-radius:50%;
+      border:1px solid rgba(255,255,255,.2); background:none; color:var(--ivory); font-size:1.1rem; cursor:pointer; transition:.35s; }
+    #art .close:hover{ transform:rotate(90deg); border-color:var(--gold); color:var(--gold); }
+    #art .yr{ color:var(--gold); letter-spacing:.35em; text-transform:uppercase; font-size:.7rem; }
+    #art h3{ font-family:"Cormorant Garamond",serif; font-weight:300; font-size:2rem; margin:.5rem 0 .2rem; line-height:1.1; }
+    #art .artist{ color:var(--ash); font-style:italic; margin:0 0 1.4rem; }
+    #art dl{ margin:0 0 1.4rem; } #art .r{ display:flex; justify-content:space-between; gap:1rem;
+      border-bottom:1px solid rgba(255,255,255,.1); padding:.6rem 0; font-size:.85rem; }
+    #art dt{ color:var(--ash); text-transform:uppercase; letter-spacing:.12em; font-size:.7rem; }
+    #art .desc{ color:var(--ash); line-height:1.7; font-size:.92rem; }
+    @media (min-width:760px){ #controls .hint.mobile{ display:none; } }
+    @media (max-width:759px){ #controls .hint.desktop{ display:none; } }
+  </style>
+</head>
+<body>
+  <div id="pano"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="brand"><b>RED SHAE</b> <span>GALLERY</span></div>
+    <div id="roomName"></div>
+  </div>
+
+  <!-- BOTTOM CONTROLS -->
+  <div id="controls">
+    <div class="dots" id="dots"></div>
+    <div class="row">
+      <button class="navbtn" id="back" aria-label="Previous room">‹</button>
+      <button class="walk" id="walk">Walk forward →</button>
+      <button class="navbtn" id="fwd" aria-label="Next room">›</button>
+    </div>
+    <div class="hint desktop">Scroll or use → to glide forward · drag to look around · click the glowing dots</div>
+    <div class="hint mobile">Tap “Walk forward” or the floor arrow · drag to look · tap dots for art</div>
+  </div>
+
+  <!-- ARTWORK PANEL -->
+  <aside id="art">
+    <button class="close" id="artClose" aria-label="Close">✕</button>
+    <div class="yr" id="artYr"></div>
+    <h3 id="artTitle"></h3>
+    <p class="artist" id="artArtist"></p>
+    <dl>
+      <div class="r"><dt>Medium</dt><dd id="artMedium"></dd></div>
+      <div class="r"><dt>Dimensions</dt><dd id="artDims"></dd></div>
+    </dl>
+    <p class="desc" id="artDesc"></p>
+  </aside>
+
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="kicker">A 360° Virtual Exhibition</div>
+    <h1>Red <span class="g">Shae</span><br>Gallery</h1>
+    <p>Step inside · Three rooms</p>
+    <button class="enter" id="enter">Enter the Gallery</button>
+    <p class="note">Demo spaces are stand-in 360° rooms so you can feel the experience.
+      Swap in real 360° photos of your gallery (taken with a 360° camera or a phone’s
+      Photo Sphere app) to make this <em>your</em> space.</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  <script>
+  /* ---- Catalog (no images needed here — these label the wall hotspots) ---- */
+  const ARTWORKS = [
+    {title:"Crimson Threshold", artist:"Élise Marchand", year:"2024", medium:"Oil & gold leaf on linen", dimensions:"180 × 140 cm", description:"A doorway dissolving into deep burgundy shadow — a threshold the eye is invited to cross but the body cannot."},
+    {title:"Gilded Silence", artist:"Tomás Vega", year:"2023", medium:"Mixed media on panel", dimensions:"120 × 120 cm", description:"Flecks of gold suspended in near-black resin. A meditation on what presence and absence share."},
+    {title:"Ivory Requiem", artist:"Hana Okafor", year:"2025", medium:"Acrylic and ash on canvas", dimensions:"150 × 200 cm", description:"A vast field of bone-white broken by a single drawn breath of charcoal — the quiet after a last note."},
+    {title:"The Velvet Hour", artist:"Élise Marchand", year:"2024", medium:"Oil on canvas", dimensions:"100 × 80 cm", description:"Dusk rendered as fabric; a thin seam of gold marks where day was last seen."},
+    {title:"Burnished Idol", artist:"Rafael Sørensen", year:"2022", medium:"Bronze pigment on board", dimensions:"90 × 70 cm", description:"A form between figure and vessel, worked until it holds light like aged metal."},
+    {title:"Wine-Dark Sea", artist:"Hana Okafor", year:"2023", medium:"Oil and wax on linen", dimensions:"160 × 220 cm", description:"Layers of deep red and indigo churn beneath a waxed surface, tilting like a horizon at night."},
+    {title:"Reliquary No. 9", artist:"Rafael Sørensen", year:"2024", medium:"Gold leaf and tar on panel", dimensions:"110 × 90 cm", description:"An altar without a saint — the holy figure replaced by a slow black pour."},
+    {title:"Last Light, Interior", artist:"Tomás Vega", year:"2025", medium:"Oil on board", dimensions:"75 × 95 cm", description:"A single window admits the day’s final gold into a room of deep umber."},
+    {title:"Ash Madonna", artist:"Hana Okafor", year:"2024", medium:"Charcoal and gesso on canvas", dimensions:"200 × 130 cm", description:"A figure emerging from and returning to dust in the same gesture."},
+  ];
+
+  /* ---- Tour layout: rooms + which wall (yaw) shows which artwork ---- */
+  const TOUR = [
+    { id:"room1", name:"I · Nocturnes Hall", pano:"pano-room1.png", walls:[{yaw:0,art:0},{yaw:90,art:1},{yaw:180,art:3}] },
+    { id:"room2", name:"II · The Gilt Room", pano:"pano-room2.png", walls:[{yaw:0,art:4},{yaw:90,art:6},{yaw:-90,art:7}] },
+    { id:"room3", name:"III · Pale Forms",   pano:"pano-room3.png", walls:[{yaw:0,art:2},{yaw:90,art:5},{yaw:180,art:8}] },
+  ];
+
+  let viewer = null, idx = 0;
+
+  function artHotspot(hotSpotDiv, args){
+    hotSpotDiv.classList.add("hs-art");
+    hotSpotDiv.innerHTML = '<span class="ring"></span><span class="core"></span><span class="lbl">'+args.title+'</span>';
+  }
+  function walkHotspot(hotSpotDiv){
+    hotSpotDiv.classList.add("hs-walk");
+    hotSpotDiv.innerHTML = '<span class="arrow">↑</span>';
+  }
+
+  function buildScenes(){
+    const scenes = {};
+    TOUR.forEach((room, ri) => {
+      const hs = room.walls.map(w => ({
+        pitch: 0, yaw: w.yaw, cssClass: "hs-art",
+        createTooltipFunc: artHotspot, createTooltipArgs: ARTWORKS[w.art],
+        clickHandlerFunc: openArt, clickHandlerArgs: ARTWORKS[w.art],
+      }));
+      // forward arrow on the floor ahead (only if there's a next room)
+      if (ri < TOUR.length - 1){
+        hs.push({ pitch:-32, yaw:0, cssClass:"hs-walk",
+          createTooltipFunc: walkHotspot, clickHandlerFunc: ()=>go(idx+1) });
+      }
+      scenes[room.id] = {
+        type:"equirectangular", panorama: room.pano,
+        hfov:100, minHfov:55, maxHfov:118, pitch:0, yaw:0, hotSpots: hs,
+      };
+    });
+    return scenes;
+  }
+
+  function go(i){
+    i = Math.max(0, Math.min(TOUR.length - 1, i));
+    if (!viewer || i === idx) { idx = i; return; }
+    const forward = i > idx;
+    // quick push-in / pull-back to fake locomotion, then cross-fade to next scene
+    try { viewer.setHfov(viewer.getHfov() + (forward ? -20 : 14), true); } catch(e){}
+    closeArt();
+    setTimeout(() => { idx = i; viewer.loadScene(TOUR[i].id, 0, 0, 100); updateUI(); }, 430);
+  }
+
+  function updateUI(){
+    document.getElementById("roomName").textContent = TOUR[idx].name;
+    document.getElementById("back").disabled = idx === 0;
+    document.getElementById("fwd").disabled = idx === TOUR.length - 1;
+    document.getElementById("walk").disabled = idx === TOUR.length - 1;
+    document.getElementById("walk").textContent = idx === TOUR.length - 1 ? "End of tour" : "Walk forward →";
+    [...document.querySelectorAll("#dots i")].forEach((d,k)=> d.classList.toggle("on", k===idx));
+  }
+
+  /* artwork panel */
+  const $ = id => document.getElementById(id);
+  function openArt(evt, a){
+    $("artYr").textContent = a.year; $("artTitle").textContent = a.title;
+    $("artArtist").textContent = a.artist; $("artMedium").textContent = a.medium;
+    $("artDims").textContent = a.dimensions; $("artDesc").textContent = a.description;
+    $("art").classList.add("open");
+  }
+  function closeArt(){ $("art").classList.remove("open"); }
+
+  function start(){
+    viewer = pannellum.viewer("pano", {
+      default:{ firstScene:"room1", sceneFadeDuration:900, autoLoad:true,
+        showControls:false, draggable:true, mouseZoom:false, friction:0.18, hotSpotDebug:false },
+      scenes: buildScenes(),
+    });
+    updateUI();
+
+    // dots
+    const dots = $("dots");
+    TOUR.forEach((r,k)=>{ const i=document.createElement("i"); if(k===0)i.classList.add("on");
+      i.title=r.name; i.style.cursor="pointer"; i.onclick=()=>go(k); dots.appendChild(i); });
+    updateUI();
+
+    // controls
+    $("fwd").onclick = ()=>go(idx+1);
+    $("back").onclick = ()=>go(idx-1);
+    $("walk").onclick = ()=>go(idx+1);
+    $("artClose").onclick = closeArt;
+
+    // desktop: mouse wheel glides between rooms (debounced)
+    let wheelLock = false;
+    $("pano").addEventListener("wheel", (e)=>{
+      e.preventDefault();
+      if (wheelLock) return; wheelLock = true; setTimeout(()=>wheelLock=false, 850);
+      go(idx + (e.deltaY > 0 ? 1 : -1));
+    }, { passive:false });
+
+    // keyboard
+    window.addEventListener("keydown",(e)=>{
+      if(e.key==="ArrowRight"||e.key==="ArrowUp"||e.key==="PageDown") go(idx+1);
+      else if(e.key==="ArrowLeft"||e.key==="ArrowDown"||e.key==="PageUp") go(idx-1);
+      else if(e.key==="Escape") closeArt();
+    });
+
+    // mobile: a quick vertical flick on the lower third = walk forward/back.
+    // (Dragging to look around still works — we only act on fast vertical flicks.)
+    let ty=0, tt=0, tx=0;
+    const pano = $("pano");
+    pano.addEventListener("touchstart",(e)=>{ const t=e.touches[0]; ty=t.clientY; tx=t.clientX; tt=Date.now(); },{passive:true});
+    pano.addEventListener("touchend",(e)=>{
+      const t=e.changedTouches[0]; const dy=t.clientY-ty, dx=t.clientX-tx, dt=Date.now()-tt;
+      if (dt<350 && Math.abs(dy)>70 && Math.abs(dy)>Math.abs(dx)*1.6) go(idx + (dy<0 ? 1 : -1));
+    },{passive:true});
+  }
+
+  document.getElementById("enter").addEventListener("click", ()=>{
+    document.getElementById("splash").classList.add("hide");
+    start();
+  });
+  </script>
+</body>
+</html>
