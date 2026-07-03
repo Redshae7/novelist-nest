@@ -19,11 +19,22 @@ export function anthropicKey() {
   const k = env("ANTHROPIC_API_KEY", "");
   return k && k.startsWith("sk-") ? k : null;
 }
+export function envAny(names, fallback) {
+  for (const n of names) { const v = env(n, ""); if (v) return v; }
+  return fallback;
+}
 export function elevenLabsConfig() {
   return {
-    key: env("ELEVENLABS_API_KEY", ""),
-    base: (env("ELEVENLABS_API_BASE", "https://api.elevenlabs.io") || "").replace(/\/$/, ""),
+    // Netlify env keys are case-sensitive and this one has been entered
+    // by hand in more than one spelling — accept the known variants.
+    key: envAny(["ELEVENLABS_API_KEY", "Elevenlabs_Api_Key", "ELEVEN_LABS_API_KEY", "XI_API_KEY"], ""),
     musicLengthMs: Number(env("ELEVENLABS_MUSIC_LENGTH_MS", "180000")),
+  };
+}
+export function renderConfig() {
+  return {
+    endpoint: env("RENDER_ENDPOINT", ""),
+    secret: env("INTERNAL_API_SECRET", ""),
   };
 }
 
@@ -78,87 +89,95 @@ export async function checkRateLimit(ip, bucket, max, windowMs = 3600000) {
   } catch (e) { return true; } // fail open — availability over strictness
 }
 
-// ---- ElevenLabs: music generation -----------------------------------
+// ---- audio generation (ElevenLabs, via external renderer) ----------
+// Netlify free-tier functions are killed at 10 seconds and a music
+// render takes longer than that, so payment paths only ENQUEUE: they
+// POST the job to the renderer (a Supabase Edge Function) which answers
+// 202 immediately, renders in the background via the ElevenLabs Music
+// API, and POSTs each finished track back to /api/song?action=attach
+// (authenticated with INTERNAL_API_SECRET).
 // Called ONLY from payment-confirmed paths (webhook / verify-payment)
-// or as an idempotent no-op re-check. Never from unauthenticated actions.
-// The Eleven Music API is synchronous (audio bytes come back on the same
-// request) — there's no task/polling/callback dance like Suno had.
-export async function startGeneration(rec, origin) {
-  if (!rec.paid) return rec;                                   // hard gate
-  if (rec.audioStatus === "generating" || rec.audioStatus === "complete") return rec; // idempotent
-  const { key, base, musicLengthMs } = elevenLabsConfig();
-  if (!key) { rec.audioStatus = "no_provider"; await saveSong(rec); return rec; }
+// or as an idempotent re-check. Never from unauthenticated actions.
 
-  rec.audioStatus = "generating";
+export const MAX_RENDER_ATTEMPTS = 3;
+const QUEUED_STALE_MS = 8 * 60 * 1000; // renderer calls back well within this
+
+export function buildMusicPrompt(rec) {
+  // Eleven Music prompt limit is 4100 chars; style brief first, then lyrics.
+  const style = String(rec.style || "").slice(0, 600);
+  return ((style ? style + "\n\nLyrics:\n" : "Lyrics:\n") + String(rec.lyrics || "")).slice(0, 4100);
+}
+
+export async function enqueueGeneration(rec, origin, { retry = false } = {}) {
+  if (!rec.paid) return rec;                       // hard gate
+  const st = rec.audioStatus;
+  if (st === "complete") return rec;
+  if (st === "queued" && !retry) return rec;       // idempotent
+  if ((rec.renderAttempts || 0) >= MAX_RENDER_ATTEMPTS) {
+    if (st !== "failed") { rec.audioStatus = "failed"; await saveSong(rec); }
+    return rec;
+  }
+  const { key, musicLengthMs } = elevenLabsConfig();
+  const { endpoint, secret } = renderConfig();
+  if (!key || !endpoint || !secret) { rec.audioStatus = "no_provider"; await saveSong(rec); return rec; }
+
+  rec.audioStatus = "queued";
+  rec.queuedAt = Date.now();
+  rec.renderAttempts = (rec.renderAttempts || 0) + 1;
   rec.audioError = null;
   await saveSong(rec);
 
-  const prompt = `${rec.style}\n\n${rec.lyrics}`;
-
-  let tracks;
   try {
-    // Two versions per purchase (matches the original value prop).
-    const renders = await Promise.all([
-      generateTrack({ key, base, musicLengthMs, prompt, title: rec.title, songId: rec.id }),
-      generateTrack({ key, base, musicLengthMs, prompt, title: rec.title, songId: rec.id }),
-    ]);
-    tracks = renders.filter(Boolean);
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        songId: rec.id,
+        prompt: buildMusicPrompt(rec),
+        musicLengthMs,
+        versions: 2,                               // two versions per purchase
+        elevenLabsKey: key,                        // renderer is stateless; all config lives here
+        callbackUrl: origin + "/api/song?action=attach",
+        callbackSecret: secret,
+      }),
+    });
+    if (!resp.ok) throw new Error("renderer " + resp.status);
+    await track("generation_started");
   } catch (e) {
-    rec.audioStatus = "failed";
-    rec.audioError = "generation: " + e.message;
-    await saveSong(rec);
-    return rec;
-  }
-
-  if (!tracks.length) {
-    rec.audioStatus = "failed";
-    rec.audioError = "No tracks were produced.";
-    await saveSong(rec);
-    return rec;
-  }
-
-  applyTracks(rec, tracks);
-  await saveSong(rec);
-  await track("generation_started");
-  if (!rec._completeTracked) {
-    rec._completeTracked = true;
-    await track("song_delivered");
+    rec.audioStatus = "queue_failed";              // status polling retries this
+    rec.audioError = "enqueue: " + e.message;
     await saveSong(rec);
   }
   return rec;
 }
 
-async function generateTrack({ key, base, musicLengthMs, prompt, title, songId }) {
-  const resp = await fetch(base + "/v1/music", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "xi-api-key": key },
-    body: JSON.stringify({ prompt, music_length_ms: musicLengthMs }),
-  });
-  if (!resp.ok) {
-    const detail = await resp.text().catch(() => "");
-    throw new Error("ElevenLabs " + resp.status + ": " + detail.slice(0, 200));
+// Self-healing: status/gift polls land here for paid songs, so a lost
+// trigger or crashed render restarts instead of hanging forever.
+export async function ensureGeneration(rec, origin) {
+  if (!rec.paid) return rec;
+  const st = rec.audioStatus;
+  const staleQueue = st === "queued" && Date.now() - (rec.queuedAt || 0) > QUEUED_STALE_MS;
+  const retriableFail = st === "failed" &&
+    (rec.renderAttempts || 0) < MAX_RENDER_ATTEMPTS && !(rec.tracks || []).length;
+  if (st === "queue_failed" || st === "no_provider" || staleQueue || retriableFail) {
+    return enqueueGeneration(rec, origin, { retry: true });
   }
-  const buf = Buffer.from(await resp.arrayBuffer());
-  const audioId = newId();
-  const store = getStore({ name: "audio" });
-  await store.set("track-" + audioId, buf, { metadata: { songId, title } });
-  return {
+  return rec;
+}
+
+export function addTrack(rec, audioId, durationSec) {
+  rec.tracks = rec.tracks || [];
+  rec.tracks.push({
     audioUrl: "/api/song-audio?id=" + audioId,
     streamUrl: "/api/song-audio?id=" + audioId,
     imageUrl: null,
-    duration: Math.round(musicLengthMs / 1000),
-    title,
-  };
-}
-
-export function applyTracks(rec, tracks) {
-  rec.tracks = tracks;
+    duration: durationSec || null,
+    title: rec.title || null,
+  });
   // keep legacy single-track fields for older records / delivery email
-  rec.audioUrl = tracks[0]?.audioUrl || rec.audioUrl || null;
-  rec.streamUrl = tracks[0]?.streamUrl || rec.streamUrl || null;
-  rec.imageUrl = tracks[0]?.imageUrl || rec.imageUrl || null;
-  rec.duration = tracks[0]?.duration || rec.duration || null;
-  rec.audioStatus = tracks.length ? "complete" : "failed";
+  rec.audioUrl = rec.tracks[0].audioUrl;
+  rec.streamUrl = rec.tracks[0].streamUrl;
+  rec.duration = rec.tracks[0].duration;
   return rec;
 }
 

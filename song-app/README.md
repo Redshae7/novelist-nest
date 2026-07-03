@@ -24,8 +24,10 @@ like UniqueSong ($60–$200, 3–7 day delivery, pay-before-you-see-anything):
    **full lyrics revealed free** with Rewrite (AI, with feedback, 3 free) and
    Edit (manual) → buy card → Stripe Checkout.
 2. Payment (webhook **and** redirect-verify, whichever lands first) flips
-   `paid=true` and starts the ElevenLabs render (synchronous — the render
-   finishes within that same request, no polling/callback needed).
+   `paid=true` and enqueues the render: the job is handed to a small
+   stateless renderer (Supabase Edge Function — Netlify free-tier
+   functions are killed at 10s, too short for a music render), which
+   calls the ElevenLabs Music API and posts the finished tracks back.
 3. `gift.html?id=…` — delivery page: live "Producing your song…" progress →
    auto-plays when ready. Two version tabs, MP3 download, lyric sheet, and a
    share button — the same URL is the recipient's gift page (referral loop).
@@ -37,12 +39,13 @@ public/index.html      landing + wizard + lyric approval + checkout
 public/gift.html       delivery + producing-progress + gift/share page
 public/terms.html      ToS incl. refunds, license, AI disclosure
 public/privacy.html    privacy policy
-netlify/lib/core.mjs   shared: blobs, rate limits, ElevenLabs generation, gating
-netlify/functions/song.mjs             /api/song (lyrics/revise/edit/status/gift/lead/track)
-netlify/functions/song-audio.mjs       /api/song-audio (streams rendered tracks out of Blobs)
+netlify/lib/core.mjs   shared: blobs, rate limits, render enqueue/retry, gating
+netlify/functions/song.mjs             /api/song (lyrics/revise/edit/status/gift/lead/track/attach)
+netlify/functions/song-audio.mjs       /api/song-audio (serves rendered tracks from Blobs, Range-aware)
 netlify/functions/create-checkout.mjs  /api/create-checkout
-netlify/functions/stripe-webhook.mjs   /api/stripe-webhook (HMAC-verified; starts render)
-netlify/functions/verify-payment.mjs   /api/verify-payment (redirect race; starts render)
+netlify/functions/stripe-webhook.mjs   /api/stripe-webhook (HMAC-verified; enqueues render)
+netlify/functions/verify-payment.mjs   /api/verify-payment (redirect race; enqueues render)
+supabase/functions/render-song/index.ts  stateless renderer (ElevenLabs Music API), deployed to Supabase
 ```
 
 ## Environment variables
@@ -51,12 +54,13 @@ netlify/functions/verify-payment.mjs   /api/verify-payment (redirect race; start
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | ✅ | — | Lyric writing. |
 | `ANTHROPIC_MODEL` | | `claude-opus-4-8` | |
-| `ELEVENLABS_API_KEY` | ✅ for audio | — | Music (Eleven Music API). Without it, paid songs queue as `no_provider`. |
-| `ELEVENLABS_API_BASE` | | `https://api.elevenlabs.io` | |
-| `ELEVENLABS_MUSIC_LENGTH_MS` | | `180000` | Target render length per track, in ms (max ~300000). |
+| `ELEVENLABS_API_KEY` | ✅ for audio | — | Music (Eleven Music API — needs a paid ElevenLabs plan). Without it, paid songs queue as `no_provider`. Legacy spellings like `Elevenlabs_Api_Key` are also accepted. |
+| `ELEVENLABS_MUSIC_LENGTH_MS` | | `180000` | Target render length per track, in ms (clamped 10000–300000). |
+| `RENDER_ENDPOINT` | ✅ for audio | — | URL of the deployed `render-song` Supabase Edge Function. |
+| `INTERNAL_API_SECRET` | ✅ for audio | — | Random string; authenticates the renderer's `attach` callbacks. |
 | `STRIPE_SECRET_KEY` | ✅ | — | |
 | `STRIPE_WEBHOOK_SECRET` | ✅ | — | `whsec_…` |
-| `SITE_URL` | recommended | request origin | Used for webhook-side generation and link building. |
+| `SITE_URL` | recommended | request origin | Used for renderer callbacks + webhook-side generation. |
 | `CURRENCY` | | `usd` | |
 | `PRICE_BASE_CENTS` | | `2499` | Keep in sync with `PRICE_BASE` in index.html. |
 | `PRICE_DELUXE_CENTS` | | `999` | Keep in sync with `PRICE_DELUXE` in index.html. |
@@ -70,14 +74,21 @@ netlify/functions/verify-payment.mjs   /api/verify-payment (redirect race; start
 2. Add env vars above.
 3. Stripe → webhook endpoint `https://<site>/api/stripe-webhook`, event
    `checkout.session.completed`, copy signing secret.
-4. Health check: `GET /api/song` returns `{status, elevenlabs, anthropic}`.
+4. Deploy the renderer: `supabase functions deploy render-song --no-verify-jwt`
+   (or via the Supabase dashboard/MCP), then set `RENDER_ENDPOINT` to its URL
+   (`https://<project-ref>.supabase.co/functions/v1/render-song`) and
+   `INTERNAL_API_SECRET` to a long random string — both on the Netlify site.
+5. Health check: `GET /api/song` returns `{status, elevenlabs, renderer, anthropic}`.
 
-**Note on function timeouts:** each purchase now renders 2 tracks
-synchronously in-request via the ElevenLabs Music API (no async
-task/callback). If `ELEVENLABS_MUSIC_LENGTH_MS` is pushed toward the max and
-renders start timing out on Netlify's default function limit, either lower
-it or move `stripe-webhook`/`verify-payment` to
-[background functions](https://docs.netlify.com/functions/background-functions/).
+**Why the renderer lives on Supabase:** Netlify free-tier functions are
+killed after 10 seconds; an ElevenLabs music render takes longer. Supabase
+Edge Functions allow long background work, so the render happens there and
+the finished MP3s are posted back into Netlify Blobs. If you upgrade Netlify
+to Pro, this could be folded back into a Netlify
+[background function](https://docs.netlify.com/functions/background-functions/)
+instead. Caveat: free Supabase projects pause after ~1 week of inactivity —
+if renders stop with songs stuck "queued", restore the project in the
+Supabase dashboard (the app auto-retries queued songs on the next poll).
 
 ## Deliberate scope cuts (add later if data says so)
 

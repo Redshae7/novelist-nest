@@ -1,7 +1,7 @@
 import {
-  env, anthropicKey, elevenLabsConfig, getIP, safeKey, newId, ok, err,
+  env, anthropicKey, elevenLabsConfig, renderConfig, getIP, safeKey, newId, ok, err,
   loadSong, saveSong, track, checkRateLimit,
-  publicSong, REVISION_LIMIT,
+  ensureGeneration, addTrack, publicSong, REVISION_LIMIT,
 } from "../lib/core.mjs";
 import { getStore } from "@netlify/blobs";
 
@@ -17,10 +17,11 @@ import { getStore } from "@netlify/blobs";
  *   lead     -> capture email for delivery + recovery
  *   track    -> funnel analytics counter
  *
- * Generation itself is synchronous (ElevenLabs Music API returns audio
- * directly) and is started by stripe-webhook / verify-payment, which
- * await it before responding — so by the time a client polls `status`
- * or `gift`, the record already holds the final state.
+ * PAID-ONLY (never triggerable by an anonymous request):
+ *   attach   -> the renderer posts finished tracks here, authenticated
+ *               with INTERNAL_API_SECRET
+ *   (generation is enqueued by stripe-webhook / verify-payment; the
+ *   status/gift polls re-enqueue if a render was lost along the way)
  * ------------------------------------------------------------------ */
 
 // ---------- lyric writing (the free hook — pennies per call) --------
@@ -176,18 +177,56 @@ async function actionEdit(body) {
 }
 
 // ---------- status / gift / callback --------------------------------
-async function actionStatus(body) {
-  const rec = await loadSong(body.songId);
+async function actionStatus(body, url) {
+  let rec = await loadSong(body.songId);
   if (!rec) return err("Song not found.", 404);
+  rec = await ensureGeneration(rec, env("SITE_URL", url.origin));
   return ok(publicSong(rec));
 }
 
 async function actionGift(body, url) {
   const id = url.searchParams.get("id") || body.id || body.songId;
-  const rec = await loadSong(id);
+  let rec = await loadSong(id);
   if (!rec) return err("Gift not found.", 404);
+  rec = await ensureGeneration(rec, env("SITE_URL", url.origin));
   await track("gift_viewed");
   return ok(publicSong(rec));
+}
+
+// The renderer (Supabase Edge Function) posts each finished track here,
+// then a final {status: "complete"|"failed"} call. It sequences its
+// calls, so there is one writer per song and no lost-update race.
+async function actionAttach(body, req) {
+  const { secret } = renderConfig();
+  const given = req.headers.get("x-internal-secret") || body.secret || "";
+  if (!secret || given !== secret) return err("Unauthorized.", 401);
+
+  const rec = await loadSong(body.songId);
+  if (!rec) return err("Song not found.", 404);
+  if (!rec.paid) return err("Not paid.", 403); // belt-and-braces
+
+  if (body.audioBase64) {
+    let buf = null;
+    try { buf = Buffer.from(String(body.audioBase64), "base64"); } catch (e) {}
+    if (!buf || !buf.length) return err("Bad audio payload.");
+    const audioId = newId();
+    const store = getStore({ name: "audio" });
+    await store.set("track-" + audioId, buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      { metadata: { songId: rec.id } });
+    addTrack(rec, audioId, Number(body.durationSec) || null);
+  }
+
+  if (body.status === "complete" || body.status === "failed") {
+    const has = (rec.tracks || []).length > 0;
+    rec.audioStatus = has ? "complete" : "failed";
+    if (!has) rec.audioError = String(body.error || "Render failed.").slice(0, 300);
+    if (rec.audioStatus === "complete" && !rec._completeTracked) {
+      rec._completeTracked = true;
+      await track("song_delivered");
+    }
+  }
+  await saveSong(rec);
+  return ok({ ok: true, tracks: (rec.tracks || []).length });
 }
 
 // ---------- leads / analytics ---------------------------------------
@@ -215,7 +254,12 @@ export default async (req) => {
   const action = url.searchParams.get("action") || null;
 
   if (req.method === "GET" && !action) {
-    return ok({ status: "running", elevenlabs: !!elevenLabsConfig().key, anthropic: !!anthropicKey() });
+    return ok({
+      status: "running",
+      elevenlabs: !!elevenLabsConfig().key,
+      renderer: !!(renderConfig().endpoint && renderConfig().secret),
+      anthropic: !!anthropicKey(),
+    });
   }
   if (req.method === "GET" && action === "gift") {
     return actionGift({}, url);
@@ -230,8 +274,9 @@ export default async (req) => {
       case "lyrics":   return await actionLyrics(body, req);
       case "revise":   return await actionRevise(body, req);
       case "edit":     return await actionEdit(body);
-      case "status":   return await actionStatus(body);
+      case "status":   return await actionStatus(body, url);
       case "gift":     return await actionGift(body, url);
+      case "attach":   return await actionAttach(body, req);
       case "lead":     return await actionLead(body);
       case "track":    await track(String(body.event || "unknown").slice(0, 60)); return ok({ ok: true });
       default:         return err("Unknown action.", 400);

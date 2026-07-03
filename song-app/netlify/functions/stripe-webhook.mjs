@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { getStore } from "@netlify/blobs";
-import { env, safeKey, loadSong, saveSong, track, startGeneration } from "../lib/core.mjs";
+import { env, safeKey, loadSong, saveSong, track, enqueueGeneration } from "../lib/core.mjs";
 
 /* ------------------------------------------------------------------ *
  * stripe-webhook.mjs — payment confirmation is the ONLY event that
@@ -46,7 +46,7 @@ export async function markPaidAndGenerate(session, origin) {
   }
 
   // Kick off (or idempotently re-check) the paid render.
-  return startGeneration(rec, origin);
+  return enqueueGeneration(rec, origin);
 }
 
 export default async (req) => {
