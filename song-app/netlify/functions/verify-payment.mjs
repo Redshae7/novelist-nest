@@ -1,77 +1,47 @@
-import { getStore } from "@netlify/blobs";
+import { env, ok, err, loadSong } from "../lib/core.mjs";
+import { markPaidAndGenerate } from "./stripe-webhook.mjs";
 
 /* ------------------------------------------------------------------ *
- * verify-payment.mjs — called on the success redirect to confirm payment
- * even before the webhook lands (Stripe retrieve), then unlock the song.
- *   { action: "verify",  songId, sessionId }
- *   { action: "status",  songId }
+ * verify-payment.mjs — called by the delivery page right after the
+ * Stripe redirect, so the song unlocks and starts rendering even
+ * before the webhook lands. Retrieves the session server-side from
+ * Stripe (the client can't forge a paid state).
  * ------------------------------------------------------------------ */
 
-function env(name, fallback) {
-  try { const v = Netlify.env.get(name); if (v) return v; } catch (e) {}
-  try { const v = process.env[name]; if (v) return v; } catch (e) {}
-  return fallback;
-}
-function safeKey(s) { return String(s || "").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200); }
-
-async function loadSong(id) {
-  const store = getStore({ name: "songs", consistency: "strong" });
-  return store.get("song-" + safeKey(id), { type: "json" }).catch(() => null);
-}
-async function unlock(rec, session) {
-  const store = getStore({ name: "songs", consistency: "strong" });
-  rec.paid = true;
-  rec.paidAt = rec.paidAt || new Date().toISOString();
-  rec.email = session.customer_email || session.customer_details?.email || rec.email || "";
-  rec.amountTotal = session.amount_total || rec.amountTotal || null;
-  if (session.metadata?.upsells) rec.upsells = session.metadata.upsells.split(",").filter(Boolean);
-  await store.set("song-" + safeKey(rec.id), JSON.stringify(rec));
-}
-
 export default async (req) => {
-  const headers = { "Content-Type": "application/json" };
-  if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+  if (req.method !== "POST") return err("Method not allowed", 405);
 
   let body;
-  try { body = await req.json(); } catch (e) {
-    return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400, headers });
-  }
+  try { body = await req.json(); } catch (e) { return err("Invalid request"); }
 
   const rec = await loadSong(body.songId);
-  if (!rec) return new Response(JSON.stringify({ error: "Song not found", paid: false }), { status: 404, headers });
+  if (!rec) return err("Song not found", 404);
 
-  if (body.action === "status") {
-    return new Response(JSON.stringify({ paid: !!rec.paid, paidAt: rec.paidAt || null }), { status: 200, headers });
+  if (rec.paid) return ok({ paid: true });
+
+  if (!body.sessionId) return ok({ paid: false });
+
+  const stripeKey = env("STRIPE_SECRET_KEY");
+  if (!stripeKey || stripeKey.startsWith("PASTE")) return err("Stripe not configured", 500);
+
+  let resp;
+  try {
+    resp = await fetch("https://api.stripe.com/v1/checkout/sessions/" + encodeURIComponent(body.sessionId), {
+      headers: { Authorization: "Bearer " + stripeKey },
+    });
+  } catch (e) { return err("Network error", 502); }
+  if (!resp.ok) return ok({ paid: false, error: "Could not verify session" });
+
+  const session = await resp.json();
+  // The session must belong to THIS song — no cross-unlocking.
+  if (session.metadata?.songId !== rec.id) return ok({ paid: false });
+
+  if (session.payment_status === "paid") {
+    const origin = req.headers.get("origin") || env("SITE_URL", new URL(req.url).origin);
+    await markPaidAndGenerate(session, origin);
+    return ok({ paid: true, verified: true });
   }
-
-  if (body.action === "verify" && body.sessionId) {
-    if (rec.paid) {
-      return new Response(JSON.stringify({ paid: true, giftUrl: "/gift.html?id=" + rec.id }), { status: 200, headers });
-    }
-    const stripeKey = env("STRIPE_SECRET_KEY");
-    if (!stripeKey || stripeKey.startsWith("PASTE")) {
-      return new Response(JSON.stringify({ error: "Stripe not configured", paid: false }), { status: 500, headers });
-    }
-    let resp;
-    try {
-      resp = await fetch("https://api.stripe.com/v1/checkout/sessions/" + encodeURIComponent(body.sessionId), {
-        headers: { Authorization: "Bearer " + stripeKey },
-      });
-    } catch (e) {
-      return new Response(JSON.stringify({ error: "Network error", paid: false }), { status: 502, headers });
-    }
-    if (!resp.ok) {
-      return new Response(JSON.stringify({ error: "Could not verify session", paid: false }), { status: 200, headers });
-    }
-    const session = await resp.json();
-    if (session.payment_status === "paid") {
-      await unlock(rec, session);
-      return new Response(JSON.stringify({ paid: true, verified: true, giftUrl: "/gift.html?id=" + rec.id }), { status: 200, headers });
-    }
-    return new Response(JSON.stringify({ paid: false, paymentStatus: session.payment_status }), { status: 200, headers });
-  }
-
-  return new Response(JSON.stringify({ error: "Invalid action. Use 'verify' or 'status'." }), { status: 400, headers });
+  return ok({ paid: false, paymentStatus: session.payment_status });
 };
 
 export const config = { path: "/api/verify-payment" };

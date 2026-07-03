@@ -3,110 +3,238 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>A song just for you · Heartnote</title>
-<meta name="description" content="Someone made you an original song. Press play." />
-<meta property="og:title" content="🎵 A song made just for you" />
-<meta property="og:description" content="Someone wrote and produced an original song for you. Press play." />
+<title>Your song · Heartnote</title>
+<meta name="description" content="An original song, made from a story about someone loved. Press play." />
+<meta property="og:title" content="🎁 A song made just for you" />
+<meta property="og:description" content="Someone turned their favorite memories of you into an original song. Press play." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,800;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
-  :root{--bg:#faf5ee;--card:#fffdfa;--ink:#2a2522;--muted:#7c736b;--accent:#d98b6f;--accent-dk:#c06f53;--line:#ece3d8}
+  :root{--bg:#fbf7f1;--card:#fffefb;--ink:#26211d;--muted:#82786e;--accent:#d6785a;--accent-dk:#b95f43;
+    --good:#4f9878;--good-soft:#e3f0ea;--line:#eee4d7;--shadow:0 14px 44px rgba(120,90,60,.12)}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:radial-gradient(1200px 600px at 50% -10%,#fbeee6,var(--bg));color:var(--ink);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
-  .wrap{max-width:600px;margin:0 auto;padding:40px 20px 60px;text-align:center}
-  .logo{font-family:'Fraunces';font-weight:800;font-size:22px;margin-bottom:30px}
+  body{background:radial-gradient(1100px 520px at 50% -8%,#f9e9de,var(--bg));color:var(--ink);font-family:'Inter',system-ui,sans-serif;min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:600px;margin:0 auto;padding:34px 20px 70px;text-align:center}
+  .logo{font-family:'Fraunces';font-weight:800;font-size:21px;margin-bottom:34px}
+  .logo a{text-decoration:none;color:var(--ink)}
   .logo b{color:var(--accent)}
-  h1{font-family:'Fraunces';font-weight:800;font-size:clamp(30px,7vw,46px);line-height:1.1;margin-bottom:10px}
-  h1 i{color:var(--accent);font-weight:500}
-  .sub{color:var(--muted);font-size:17px;margin-bottom:28px}
-  .player{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px 26px;box-shadow:0 14px 50px rgba(120,90,60,.12)}
-  .art{width:150px;height:150px;border-radius:16px;object-fit:cover;margin:0 auto 18px;display:block;background:#f3e6dc}
-  .playbtn{width:84px;height:84px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:28px;cursor:pointer;margin:6px auto 16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(217,139,111,.4)}
-  .title{font-family:'Fraunces';font-weight:800;font-size:24px}
-  .style{color:var(--muted);font-size:14px;margin-bottom:16px}
-  .pbar{height:8px;background:#efe6db;border-radius:999px;overflow:hidden}
-  .pbar>i{display:block;height:100%;width:0;background:var(--accent)}
-  .ptime{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px}
-  .actions{display:flex;gap:10px;margin-top:18px}
-  .btn{flex:1;border:none;border-radius:999px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-  .btn.ghost{background:transparent;color:var(--accent-dk);border:1px solid var(--line)}
-  .lyr{margin-top:22px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
-  .lyr h3{font-family:'Fraunces';font-size:18px;margin-bottom:10px}
-  .lyr pre{white-space:pre-wrap;font-family:'Inter';font-size:15px;line-height:1.8;color:#4a423b}
-  .cta{margin-top:30px;font-size:14px;color:var(--muted)}
+  h1{font-family:'Fraunces';font-weight:800;font-size:clamp(30px,7vw,46px);line-height:1.08;margin-bottom:10px;letter-spacing:-.015em}
+  h1 em{font-style:italic;color:var(--accent);font-weight:500}
+  .sub{color:var(--muted);font-size:16.5px;margin-bottom:26px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px 26px;box-shadow:var(--shadow)}
+
+  /* producing state */
+  .prodwrap .disc{width:120px;height:120px;border-radius:50%;margin:6px auto 20px;position:relative;
+    background:conic-gradient(from 0deg,#f3e0d6,#d6785a,#f3e0d6);animation:spinslow 2.6s linear infinite;display:flex;align-items:center;justify-content:center}
+  .prodwrap .disc:after{content:"";width:36px;height:36px;border-radius:50%;background:var(--card)}
+  @keyframes spinslow{to{transform:rotate(360deg)}}
+  .prodline{color:var(--muted);font-size:14.5px;min-height:22px}
+  .bar{height:9px;background:#efe4d6;border-radius:99px;overflow:hidden;margin:20px 0 8px}
+  .bar>i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--accent),var(--accent-dk));border-radius:99px;transition:width .8s ease}
+  .eta{font-size:12.5px;color:var(--muted)}
+
+  /* player */
+  .art{width:170px;height:170px;border-radius:18px;object-fit:cover;margin:0 auto 18px;display:block;background:#f3e6dc;box-shadow:0 10px 26px rgba(120,90,60,.2)}
+  .playbtn{width:86px;height:86px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent-dk));border:none;color:#fff;font-size:28px;cursor:pointer;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(214,120,90,.45);transition:transform .1s}
+  .playbtn:hover{transform:scale(1.05)}
+  .title{font-family:'Fraunces';font-weight:800;font-size:25px}
+  .style{color:var(--muted);font-size:13.5px;margin:2px 0 18px}
+  .vtabs{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+  .vtab{border:1.5px solid var(--line);background:#fff;border-radius:999px;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer}
+  .vtab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pbar{height:8px;background:#efe4d6;border-radius:99px;overflow:hidden;cursor:pointer}
+  .pbar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px}
+  .ptime{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .btn{flex:1;min-width:130px;border:none;border-radius:999px;background:linear-gradient(180deg,var(--accent),var(--accent-dk));color:#fff;font-family:'Inter';font-weight:600;font-size:15px;padding:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 6px 16px rgba(214,120,90,.3)}
+  .btn.ghost{background:#fff;color:var(--accent-dk);border:1.5px solid var(--line);box-shadow:none}
+  .lyr{margin-top:22px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
+  .lyr h3{font-family:'Fraunces';font-size:19px;margin-bottom:10px}
+  .lyr pre{white-space:pre-wrap;font-family:'Fraunces';font-weight:500;font-size:16px;line-height:1.85;color:#3d362f}
+  .cta{margin-top:32px;font-size:14px;color:var(--muted)}
   .cta a{color:var(--accent-dk);font-weight:600}
+  .note{margin-top:14px;font-size:13px;color:var(--muted)}
   .loading,.error{padding:60px 0;color:var(--muted)}
-  .spin{width:22px;height:22px;border:3px solid rgba(217,139,111,.35);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:rot .7s linear infinite}
+  .spin{width:22px;height:22px;border:3px solid rgba(214,120,90,.3);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:rot .7s linear infinite}
   @keyframes rot{to{transform:rotate(360deg)}}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
   .toast.show{opacity:1}
+  footer{padding:10px 0 30px;text-align:center;color:var(--muted);font-size:12px}
+  footer a{color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="logo">Heart<b>note</b>.</div>
-  <div id="root"><div class="loading"><span class="spin"></span><p style="margin-top:14px">Loading your song…</p></div></div>
-  <p class="cta">Want one of your own? <a href="/">Make a custom song →</a></p>
+  <div class="logo"><a href="/">Heart<b>note</b>.</a></div>
+  <div id="root"><div class="loading"><span class="spin"></span><p style="margin-top:14px">Loading…</p></div></div>
+  <p class="cta" id="ctaLine">Make one for someone you love → <a href="/">Heartnote</a></p>
 </div>
 <div class="toast" id="toast">Link copied!</div>
+<footer><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></footer>
+
 <script>
 (function(){
-  var id=new URLSearchParams(location.search).get("id");
+  "use strict";
+  var q=new URLSearchParams(location.search);
+  var id=q.get("id"), sessionId=q.get("session_id");
   var root=document.getElementById("root");
-  if(!id){ root.innerHTML='<div class="error">No gift specified.</div>'; return; }
+  var song=null, pollTimer=null, prog=4;
 
-  fetch("/api/song?action=gift&id="+encodeURIComponent(id))
-    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
-    .then(function(res){
-      if(!res.ok){ root.innerHTML='<div class="error">'+(res.d.error||"Gift not found.")+'</div>'; return; }
-      render(res.d);
-    })
-    .catch(function(){ root.innerHTML='<div class="error">Something went wrong. Please refresh.</div>'; });
+  if(!id){root.innerHTML='<div class="error">No song specified.</div>';return;}
 
-  function fmt(s){ s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+  boot();
 
-  function render(s){
-    var name=s.recipient||"you";
-    if(!s.paid || !s.fullUrl){
-      root.innerHTML='<h1>Almost ready…</h1><p class="sub">This song is being finalized. Check back in a few minutes.</p>';
+  async function boot(){
+    // Coming back from Stripe? Verify first so generation starts immediately.
+    if(sessionId){
+      renderProducing("Confirming your payment…");
+      try{
+        await fetch("/api/verify-payment",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({songId:id,sessionId:sessionId})});
+      }catch(e){}
+      history.replaceState({},"", "/gift.html?id="+encodeURIComponent(id));
+    }
+    await refresh(true);
+  }
+
+  async function refresh(first){
+    var d=null;
+    try{
+      var r=await fetch("/api/song?action=gift&id="+encodeURIComponent(id));
+      d=await r.json();
+      if(!r.ok){root.innerHTML='<div class="error">'+esc(d.error||"Song not found.")+'</div>';return;}
+    }catch(e){
+      if(first)root.innerHTML='<div class="error">Connection problem — please refresh.</div>';
       return;
     }
-    root.innerHTML=
-      '<h1>For <i>'+esc(name)+'</i></h1>'+
-      '<p class="sub">Someone made you an original song. Press play. 🎧</p>'+
-      '<div class="player">'+
-        (s.imageUrl?'<img class="art" src="'+esc(s.imageUrl)+'" alt=""/>':'')+
-        '<button class="playbtn" id="pb">▶</button>'+
-        '<div class="title">'+esc(s.title||"Your Song")+'</div>'+
-        '<div class="style">'+esc(s.style||"")+'</div>'+
-        '<div class="pbar"><i id="bar"></i></div>'+
-        '<div class="ptime"><span id="cur">0:00</span><span id="dur">'+(s.duration?fmt(s.duration):"")+'</span></div>'+
-        '<audio id="au" src="'+esc(s.fullUrl)+'" preload="auto"></audio>'+
-        '<div class="actions">'+
-          '<a class="btn" id="dl" href="'+esc(s.fullUrl)+'" download="heartnote-song.mp3">⬇ Download</a>'+
-          '<button class="btn ghost" id="share">↗ Share</button>'+
-        '</div>'+
-      '</div>'+
-      (s.lyrics?'<div class="lyr"><h3>Lyrics</h3><pre>'+esc(s.lyrics)+'</pre></div>':'');
+    song=d;
+    if(!d.paid){renderUnpaid();return;}
+    if(d.status==="complete"||((d.tracks||[]).length&&d.tracks.some(function(t){return t.audioUrl||t.streamUrl;}))){
+      clearInterval(pollTimer);renderPlayer();return;
+    }
+    if(d.status==="failed"||d.audioError){clearInterval(pollTimer);renderFailed();return;}
+    if(d.status==="no_provider"){clearInterval(pollTimer);renderProducing("Your song is queued — you'll get an email the moment it's ready.");return;}
+    renderProducing();
+    if(!pollTimer){pollTimer=setInterval(refresh,4000);}
+  }
 
-    var au=document.getElementById("au"),pb=document.getElementById("pb"),playing=false;
-    pb.onclick=function(){ playing?au.pause():au.play(); };
-    au.onplay=function(){ playing=true; pb.textContent="❚❚"; };
-    au.onpause=function(){ playing=false; pb.textContent="▶"; };
-    au.onloadedmetadata=function(){ if(!s.duration) document.getElementById("dur").textContent=fmt(au.duration); };
-    au.ontimeupdate=function(){
-      var d=au.duration||s.duration||1;
-      document.getElementById("cur").textContent=fmt(au.currentTime);
-      document.getElementById("bar").style.width=Math.min(100,(au.currentTime/d)*100)+"%";
+  // ---------- states ----------
+  var PROD_LINES=["Warming up the studio…","Setting the tempo…","Recording vocals…","Layering instruments…","Mixing & mastering…","Almost there…"];
+  var lineIdx=0, lineTimer=null;
+  function renderProducing(msg){
+    if(!document.getElementById("prodBar")){
+      root.innerHTML=
+        '<h1>Producing your song…</h1>'+
+        '<p class="sub">“'+esc((song&&song.title)||"Your song")+'” is being recorded right now. This usually takes 1–3 minutes.</p>'+
+        '<div class="card prodwrap">'+
+          '<div class="disc"></div>'+
+          '<p class="prodline" id="prodLine">'+esc(msg||PROD_LINES[0])+'</p>'+
+          '<div class="bar"><i id="prodBar"></i></div>'+
+          '<p class="eta">Keep this page open — it will start playing automatically.</p>'+
+        '</div>';
+      prog=4;lineIdx=0;
+      clearInterval(lineTimer);
+      lineTimer=setInterval(function(){
+        var el=document.getElementById("prodLine");
+        if(el&&!msg){lineIdx=(lineIdx+1)%PROD_LINES.length;el.textContent=PROD_LINES[lineIdx];}
+        var bar=document.getElementById("prodBar");
+        if(bar&&prog<93){prog+=Math.max(.5,(93-prog)*.05);bar.style.width=prog+"%";}
+      },2200);
+    } else if(msg){
+      var el=document.getElementById("prodLine");if(el)el.textContent=msg;
+    }
+  }
+
+  function renderUnpaid(){
+    clearInterval(pollTimer);clearInterval(lineTimer);
+    root.innerHTML=
+      '<h1>Almost theirs…</h1>'+
+      '<p class="sub">The lyrics for “'+esc(song.title||"this song")+'” are written — production hasn\'t been unlocked yet.</p>'+
+      '<div class="card"><a class="btn" href="/?resume='+encodeURIComponent(id)+'">Finish this song →</a></div>';
+  }
+
+  function renderFailed(){
+    clearInterval(lineTimer);
+    root.innerHTML=
+      '<h1>We hit a wrong note 😔</h1>'+
+      '<p class="sub">Something went wrong producing your song. We\'re on it — and your Love-it guarantee covers this completely.</p>'+
+      '<div class="card"><p style="font-size:14.5px;color:var(--muted)">Reply to your receipt email (or refresh in a few minutes — sometimes it recovers on its own). We\'ll re-produce it free or refund you in full.</p>'+
+      '<a class="btn ghost" style="margin-top:16px" href="javascript:location.reload()">↻ Try refreshing</a></div>';
+  }
+
+  // ---------- player ----------
+  var current=0, audio=new Audio(), playing=false;
+  function tracks(){return (song.tracks||[]).filter(function(t){return t.audioUrl||t.streamUrl;});}
+  function trackUrl(t){return t.audioUrl||t.streamUrl;}
+
+  function renderPlayer(){
+    clearInterval(lineTimer);
+    var ts=tracks();
+    var owner=!!sessionId||localStorage.getItem("hn-owner-"+id)==="1";
+    if(sessionId)try{localStorage.setItem("hn-owner-"+id,"1");}catch(e){}
+
+    var vt="";
+    if(ts.length>1){
+      vt='<div class="vtabs">'+ts.map(function(t,i){
+        return '<button class="vtab'+(i===0?" on":"")+'" data-i="'+i+'">Version '+String.fromCharCode(65+i)+'</button>';
+      }).join("")+'</div>';
+    }
+    root.innerHTML=
+      '<h1>For <em>'+esc(song.recipient||"you")+'</em></h1>'+
+      '<p class="sub">'+(owner?"Your song is ready. 🎉 Play it, download it, and share the gift link.":"Someone turned their favorite memories of you into a song. Press play. 🎧")+'</p>'+
+      '<div class="card">'+
+        (ts[current]&&ts[current].imageUrl?'<img class="art" src="'+esc(ts[current].imageUrl)+'" alt="Song artwork"/>':'')+
+        '<button class="playbtn" id="pb" aria-label="Play">▶</button>'+
+        '<div class="title">“'+esc(song.title||"Your Song")+'”</div>'+
+        '<div class="style">'+esc((song.style||"").split(",").slice(0,3).join(","))+'</div>'+
+        vt+
+        '<div class="pbar" id="seek"><i id="bar"></i></div>'+
+        '<div class="ptime"><span id="cur">0:00</span><span id="dur">–:––</span></div>'+
+        '<div class="actions">'+
+          '<a class="btn" id="dl" href="'+esc(trackUrl(ts[0])||"#")+'" download="heartnote-'+esc(song.recipient||"song")+'.mp3">⬇ Download MP3</a>'+
+          '<button class="btn ghost" id="share">🎁 Share gift link</button>'+
+        '</div>'+
+        (owner?'<p class="note">Tip: send the gift link — this page is the unwrapping moment. 💌</p>':'')+
+      '</div>'+
+      (song.lyrics?'<div class="lyr"><h3>Lyrics</h3><pre>'+esc(song.lyrics)+'</pre></div>':'');
+
+    bindPlayer(ts);
+  }
+
+  function bindPlayer(ts){
+    var pb=document.getElementById("pb");
+    function load(i){
+      current=i;audio.src=trackUrl(ts[i]);audio.load();
+      document.querySelectorAll(".vtab").forEach(function(b,bi){b.classList.toggle("on",bi===i);});
+      var dl=document.getElementById("dl");if(dl)dl.href=trackUrl(ts[i]);
+    }
+    load(0);
+    document.querySelectorAll(".vtab").forEach(function(b){
+      b.onclick=function(){var was=playing;audio.pause();load(Number(b.getAttribute("data-i")));if(was)audio.play();};
+    });
+    pb.onclick=function(){playing?audio.pause():audio.play();};
+    audio.onplay=function(){playing=true;pb.textContent="❚❚";};
+    audio.onpause=function(){playing=false;pb.textContent="▶";};
+    audio.onloadedmetadata=function(){document.getElementById("dur").textContent=fmt(audio.duration);};
+    audio.ontimeupdate=function(){
+      document.getElementById("cur").textContent=fmt(audio.currentTime);
+      document.getElementById("bar").style.width=(audio.duration?(audio.currentTime/audio.duration)*100:0)+"%";
+    };
+    document.getElementById("seek").onclick=function(ev){
+      if(!audio.duration)return;
+      var r=this.getBoundingClientRect();
+      audio.currentTime=((ev.clientX-r.left)/r.width)*audio.duration;
     };
     document.getElementById("share").onclick=async function(){
-      var url=location.href;
-      if(navigator.share){ try{ await navigator.share({title:"A song just for you",url:url}); return; }catch(e){} }
-      try{ await navigator.clipboard.writeText(url); toast(); }catch(e){ prompt("Copy this link:",url); }
+      var url=location.origin+"/gift.html?id="+encodeURIComponent(id);
+      if(navigator.share){try{await navigator.share({title:"A song just for you 🎁",url:url});return;}catch(e){}}
+      try{await navigator.clipboard.writeText(url);toast();}catch(e){prompt("Copy this link:",url);}
     };
   }
-  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function toast(){ var t=document.getElementById("toast"); t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},1800); }
+
+  function fmt(s){s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2);}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+  function toast(){var t=document.getElementById("toast");t.classList.add("show");setTimeout(function(){t.classList.remove("show");},1800);}
 })();
 </script>
 </body>
