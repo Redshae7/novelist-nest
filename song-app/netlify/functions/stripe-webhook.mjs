@@ -53,13 +53,17 @@ export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   const secret = env("STRIPE_WEBHOOK_SECRET");
+  if (!secret || secret.startsWith("PASTE")) {
+    // No signing secret -> we can't authenticate events, so accept none.
+    // Payment unlock still works via /api/verify-payment on the redirect;
+    // the webhook is closed-tab insurance, never an unverified side door.
+    return new Response("Webhook not configured", { status: 503 });
+  }
+
   const sig = req.headers.get("stripe-signature");
   const rawBody = await req.text();
-
-  if (secret && !secret.startsWith("PASTE")) {
-    if (!verifyStripeSignature(rawBody, sig, secret)) {
-      return new Response("Invalid signature", { status: 400 });
-    }
+  if (!verifyStripeSignature(rawBody, sig, secret)) {
+    return new Response("Invalid signature", { status: 400 });
   }
 
   let event;
