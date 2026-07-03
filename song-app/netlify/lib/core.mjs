@@ -19,11 +19,11 @@ export function anthropicKey() {
   const k = env("ANTHROPIC_API_KEY", "");
   return k && k.startsWith("sk-") ? k : null;
 }
-export function sunoConfig() {
+export function elevenLabsConfig() {
   return {
-    key: env("SUNO_API_KEY", ""),
-    base: (env("SUNO_API_BASE", "https://api.sunoapi.org") || "").replace(/\/$/, ""),
-    model: env("SUNO_MODEL", "V4_5"),
+    key: env("ELEVENLABS_API_KEY", ""),
+    base: (env("ELEVENLABS_API_BASE", "https://api.elevenlabs.io") || "").replace(/\/$/, ""),
+    musicLengthMs: Number(env("ELEVENLABS_MUSIC_LENGTH_MS", "180000")),
   };
 }
 
@@ -78,109 +78,87 @@ export async function checkRateLimit(ip, bucket, max, windowMs = 3600000) {
   } catch (e) { return true; } // fail open — availability over strictness
 }
 
-// ---- Suno: start + refresh ----------------------------------------
+// ---- ElevenLabs: music generation -----------------------------------
 // Called ONLY from payment-confirmed paths (webhook / verify-payment)
 // or as an idempotent no-op re-check. Never from unauthenticated actions.
+// The Eleven Music API is synchronous (audio bytes come back on the same
+// request) — there's no task/polling/callback dance like Suno had.
 export async function startGeneration(rec, origin) {
-  if (!rec.paid) return rec;                       // hard gate
-  if (rec.taskId && rec.audioStatus !== "failed") return rec; // idempotent
-  const { key, base, model } = sunoConfig();
+  if (!rec.paid) return rec;                                   // hard gate
+  if (rec.audioStatus === "generating" || rec.audioStatus === "complete") return rec; // idempotent
+  const { key, base, musicLengthMs } = elevenLabsConfig();
   if (!key) { rec.audioStatus = "no_provider"; await saveSong(rec); return rec; }
 
-  const payload = {
-    prompt: rec.lyrics,
-    style: rec.style,
-    title: rec.title,
-    customMode: true,
-    instrumental: false,
-    model,
-    callBackUrl: origin + "/api/song?action=callback&songId=" + encodeURIComponent(rec.id),
-  };
-
-  let resp, data = {};
-  try {
-    resp = await fetch(base + "/api/v1/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-      body: JSON.stringify(payload),
-    });
-    data = await resp.json().catch(() => ({}));
-  } catch (e) {
-    rec.audioStatus = "failed"; rec.audioError = "network: " + e.message;
-    await saveSong(rec); return rec;
-  }
-
-  const taskId = data?.data?.taskId || data?.data?.task_id || data?.taskId;
-  if (!resp.ok || (data.code && data.code !== 200) || !taskId) {
-    rec.audioStatus = "failed";
-    rec.audioError = JSON.stringify(data).slice(0, 200);
-    await saveSong(rec); return rec;
-  }
-
-  rec.taskId = taskId;
   rec.audioStatus = "generating";
   rec.audioError = null;
   await saveSong(rec);
-  await track("generation_started");
-  return rec;
-}
 
-function mapSunoStatus(s) {
-  const t = String(s || "").toUpperCase();
-  if (["SUCCESS", "COMPLETE", "COMPLETED"].includes(t)) return "complete";
-  if (t.includes("FAIL") || t.includes("ERROR") || t.includes("SENSITIVE")) return "failed";
-  return "generating";
-}
+  const prompt = `${rec.style}\n\n${rec.lyrics}`;
 
-// Extract track list from either the record-info response or a callback body.
-export function extractTracks(payload) {
-  const d = payload?.data || payload || {};
-  const arr = d?.response?.sunoData || d?.response?.data || d?.sunoData ||
-              (Array.isArray(d?.data) ? d.data : null) || (Array.isArray(d) ? d : []);
-  if (!Array.isArray(arr)) return [];
-  return arr.map((t) => ({
-    audioUrl: t.audioUrl || t.audio_url || null,
-    streamUrl: t.streamAudioUrl || t.stream_audio_url || null,
-    imageUrl: t.imageUrl || t.image_url || null,
-    duration: t.duration || null,
-    title: t.title || null,
-  })).filter((t) => t.audioUrl || t.streamUrl);
-}
-
-export function applyTracks(rec, tracks, statusStr) {
-  if (tracks.length) {
-    rec.tracks = tracks;
-    // keep legacy single-track fields for older records / delivery email
-    rec.audioUrl = tracks[0].audioUrl || rec.audioUrl || null;
-    rec.streamUrl = tracks[0].streamUrl || rec.streamUrl || null;
-    rec.imageUrl = tracks[0].imageUrl || rec.imageUrl || null;
-    rec.duration = tracks[0].duration || rec.duration || null;
-  }
-  const mapped = mapSunoStatus(statusStr);
-  const anyFinal = tracks.some((t) => t.audioUrl);
-  rec.audioStatus = anyFinal ? "complete" : (tracks.length ? "streaming" : mapped);
-  if (mapped === "failed" && !tracks.length) rec.audioStatus = "failed";
-  return rec;
-}
-
-export async function refreshFromSuno(rec) {
-  const { key, base } = sunoConfig();
-  if (!key || !rec.taskId) return rec;
-  if (rec.audioStatus === "complete") return rec;
-  let resp, data;
+  let tracks;
   try {
-    resp = await fetch(base + "/api/v1/generate/record-info?taskId=" + encodeURIComponent(rec.taskId), {
-      headers: { Authorization: "Bearer " + key },
-    });
-    data = await resp.json().catch(() => ({}));
-  } catch (e) { return rec; } // transient; caller keeps polling
-  const status = data?.data?.status;
-  applyTracks(rec, extractTracks(data), status);
-  if (rec.audioStatus === "complete" && !rec._completeTracked) {
+    // Two versions per purchase (matches the original value prop).
+    const renders = await Promise.all([
+      generateTrack({ key, base, musicLengthMs, prompt, title: rec.title, songId: rec.id }),
+      generateTrack({ key, base, musicLengthMs, prompt, title: rec.title, songId: rec.id }),
+    ]);
+    tracks = renders.filter(Boolean);
+  } catch (e) {
+    rec.audioStatus = "failed";
+    rec.audioError = "generation: " + e.message;
+    await saveSong(rec);
+    return rec;
+  }
+
+  if (!tracks.length) {
+    rec.audioStatus = "failed";
+    rec.audioError = "No tracks were produced.";
+    await saveSong(rec);
+    return rec;
+  }
+
+  applyTracks(rec, tracks);
+  await saveSong(rec);
+  await track("generation_started");
+  if (!rec._completeTracked) {
     rec._completeTracked = true;
     await track("song_delivered");
+    await saveSong(rec);
   }
-  await saveSong(rec);
+  return rec;
+}
+
+async function generateTrack({ key, base, musicLengthMs, prompt, title, songId }) {
+  const resp = await fetch(base + "/v1/music", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "xi-api-key": key },
+    body: JSON.stringify({ prompt, music_length_ms: musicLengthMs }),
+  });
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    throw new Error("ElevenLabs " + resp.status + ": " + detail.slice(0, 200));
+  }
+  const buf = Buffer.from(await resp.arrayBuffer());
+  const audioId = newId();
+  const store = getStore({ name: "audio" });
+  await store.set("track-" + audioId, buf, { metadata: { songId, title } });
+  return {
+    audioUrl: "/api/song-audio?id=" + audioId,
+    streamUrl: "/api/song-audio?id=" + audioId,
+    imageUrl: null,
+    duration: Math.round(musicLengthMs / 1000),
+    title,
+  };
+}
+
+export function applyTracks(rec, tracks) {
+  rec.tracks = tracks;
+  // keep legacy single-track fields for older records / delivery email
+  rec.audioUrl = tracks[0]?.audioUrl || rec.audioUrl || null;
+  rec.streamUrl = tracks[0]?.streamUrl || rec.streamUrl || null;
+  rec.imageUrl = tracks[0]?.imageUrl || rec.imageUrl || null;
+  rec.duration = tracks[0]?.duration || rec.duration || null;
+  rec.audioStatus = tracks.length ? "complete" : "failed";
   return rec;
 }
 

@@ -1,7 +1,7 @@
 import {
-  env, anthropicKey, sunoConfig, getIP, safeKey, newId, ok, err,
+  env, anthropicKey, elevenLabsConfig, getIP, safeKey, newId, ok, err,
   loadSong, saveSong, track, checkRateLimit,
-  refreshFromSuno, extractTracks, applyTracks, publicSong, REVISION_LIMIT,
+  publicSong, REVISION_LIMIT,
 } from "../lib/core.mjs";
 import { getStore } from "@netlify/blobs";
 
@@ -17,9 +17,10 @@ import { getStore } from "@netlify/blobs";
  *   lead     -> capture email for delivery + recovery
  *   track    -> funnel analytics counter
  *
- * PAID-ONLY (never triggerable by an anonymous request):
- *   callback -> Suno posts results here when a PAID render finishes
- *   (generation itself is started by stripe-webhook / verify-payment)
+ * Generation itself is synchronous (ElevenLabs Music API returns audio
+ * directly) and is started by stripe-webhook / verify-payment, which
+ * await it before responding — so by the time a client polls `status`
+ * or `gift`, the record already holds the final state.
  * ------------------------------------------------------------------ */
 
 // ---------- lyric writing (the free hook — pennies per call) --------
@@ -161,7 +162,8 @@ async function actionRevise(body, req) {
 async function actionEdit(body) {
   const rec = await loadSong(body.songId);
   if (!rec) return err("Song not found.", 404);
-  if (rec.paid && rec.taskId) return err("This song is already in production and can't be edited.", 409);
+  if (rec.paid && rec.audioStatus && rec.audioStatus !== "not_started" && rec.audioStatus !== "no_provider")
+    return err("This song is already in production and can't be edited.", 409);
   const lyrics = String(body.lyrics || "").slice(0, 5000).trim();
   const title = String(body.title || rec.title || "").slice(0, 120).trim();
   if (!lyrics) return err("Lyrics can't be empty.");
@@ -175,41 +177,17 @@ async function actionEdit(body) {
 
 // ---------- status / gift / callback --------------------------------
 async function actionStatus(body) {
-  let rec = await loadSong(body.songId);
+  const rec = await loadSong(body.songId);
   if (!rec) return err("Song not found.", 404);
-  if (rec.paid && rec.taskId && rec.audioStatus !== "complete" && rec.audioStatus !== "failed") {
-    rec = await refreshFromSuno(rec);
-  }
   return ok(publicSong(rec));
 }
 
 async function actionGift(body, url) {
   const id = url.searchParams.get("id") || body.id || body.songId;
-  let rec = await loadSong(id);
+  const rec = await loadSong(id);
   if (!rec) return err("Gift not found.", 404);
-  if (rec.paid && rec.taskId && rec.audioStatus !== "complete" && rec.audioStatus !== "failed") {
-    rec = await refreshFromSuno(rec);
-  }
   await track("gift_viewed");
   return ok(publicSong(rec));
-}
-
-async function actionCallback(body, url) {
-  const id = url.searchParams.get("songId") || body.songId;
-  const rec = await loadSong(id);
-  if (!rec) return ok({ received: true });
-  // Belt-and-braces: even the callback can't attach audio to an unpaid song.
-  if (!rec.paid) return ok({ received: true });
-  const tracks = extractTracks(body);
-  if (tracks.length) {
-    applyTracks(rec, tracks, body?.data?.callbackType === "complete" ? "SUCCESS" : "PROCESSING");
-    if (rec.audioStatus === "complete" && !rec._completeTracked) {
-      rec._completeTracked = true;
-      await track("song_delivered");
-    }
-    await saveSong(rec);
-  }
-  return ok({ received: true });
 }
 
 // ---------- leads / analytics ---------------------------------------
@@ -237,7 +215,7 @@ export default async (req) => {
   const action = url.searchParams.get("action") || null;
 
   if (req.method === "GET" && !action) {
-    return ok({ status: "running", suno: !!sunoConfig().key, anthropic: !!anthropicKey() });
+    return ok({ status: "running", elevenlabs: !!elevenLabsConfig().key, anthropic: !!anthropicKey() });
   }
   if (req.method === "GET" && action === "gift") {
     return actionGift({}, url);
@@ -254,7 +232,6 @@ export default async (req) => {
       case "edit":     return await actionEdit(body);
       case "status":   return await actionStatus(body);
       case "gift":     return await actionGift(body, url);
-      case "callback": return await actionCallback(body, url);
       case "lead":     return await actionLead(body);
       case "track":    await track(String(body.event || "unknown").slice(0, 60)); return ok({ ok: true });
       default:         return err("Unknown action.", 400);
