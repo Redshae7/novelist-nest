@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Red Shae Gallery — Begin Your Collection</title>
+  <meta name="description" content="A home for new collectors. Discover emerging artists, original works, honest guidance. Your first piece is closer than you think." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --ink:#0a0807; --gold:#c9a227; --goldlt:#e8d49b; --ash:#b8ada0; --ivory:#f3ece1; --wine:#3a0f1c; --burg:#5c1a2b; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html,body{ height:100%; background:var(--ink); color:var(--ivory); font-family:Inter,system-ui,sans-serif; overflow:hidden; }
+    #stage{ position:fixed; inset:0; overflow:hidden; background:#050403; }
+
+    /* ---------- BACKGROUND SCENE WASHES ---------- */
+    .bg{ position:absolute; inset:-6%; opacity:0; will-change:opacity,transform; }
+    .bg .ken{ position:absolute; inset:0; animation:ken 22s ease-in-out infinite alternate; }
+    @keyframes ken{ from{ transform:scale(1.04) translate(-1%, -1%);} to{ transform:scale(1.14) translate(1.5%, 1%);} }
+    .bg0 .ken{ background:radial-gradient(120% 90% at 30% 20%, #2a1416 0%, #0c0707 55%, #050303 100%); }
+    .bg1 .ken{ background:radial-gradient(120% 90% at 70% 30%, #3a0f1c 0%, #140a0c 55%, #060404 100%); }
+    .bg2 .ken{ background:radial-gradient(120% 100% at 40% 60%, #2b2016 0%, #120d08 55%, #060504 100%); }
+    .bg3 .ken{ background:radial-gradient(120% 100% at 60% 40%, #1a1512 0%, #0b0908 60%, #050403 100%); }
+
+    /* drifting framed "artworks" */
+    .frame{ position:absolute; border:1px solid rgba(201,162,39,.5); box-shadow:0 30px 80px -30px #000, inset 0 0 60px rgba(0,0,0,.5);
+      opacity:0; will-change:opacity,transform; }
+    .frame .canvasart{ position:absolute; inset:6px; }
+    .f1{ width:22vmin; height:28vmin; left:14%; top:30%; }
+    .f1 .canvasart{ background:linear-gradient(150deg,#7a1f33,#2a0d16 70%); }
+    .f2{ width:26vmin; height:20vmin; right:13%; top:26%; }
+    .f2 .canvasart{ background:linear-gradient(150deg,#c9a227,#5c3d0c 75%); }
+    .f3{ width:20vmin; height:26vmin; left:50%; top:48%; transform:translateX(-50%); }
+    .f3 .canvasart{ background:linear-gradient(150deg,#e8e2d5,#8a8478 80%); }
+
+    /* cinematic overlays */
+    .vignette{ position:absolute; inset:0; background:radial-gradient(ellipse at center, transparent 46%, rgba(0,0,0,.72) 100%); pointer-events:none; }
+    #dust{ position:absolute; inset:0; pointer-events:none; }
+    .grain{ position:absolute; inset:0; opacity:.06; mix-blend-mode:overlay; pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    /* horizontal gold light sweep */
+    .sweep{ position:absolute; top:0; bottom:0; width:40%; pointer-events:none; opacity:0;
+      background:linear-gradient(100deg, transparent, rgba(232,212,155,.14), transparent); filter:blur(6px); }
+
+    /* ---------- TEXT LAYER ---------- */
+    #reel{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:6vw; }
+    .beat{ position:absolute; left:0; right:0; padding:0 6vw; opacity:0; will-change:opacity,transform; }
+    .kick{ color:var(--gold); letter-spacing:.55em; text-transform:uppercase; font-size:clamp(.6rem,1.6vw,.8rem); }
+    .head{ font-family:"Cormorant Garamond",serif; font-weight:300; line-height:.98; font-size:clamp(2.6rem,10vw,7rem); }
+    .head .w{ display:inline-block; }
+    .head .em{ color:var(--gold); font-style:italic; }
+    .value{ font-family:"Cormorant Garamond",serif; font-weight:300; font-style:italic; font-size:clamp(1.8rem,6.5vw,3.6rem); color:var(--goldlt); }
+    .value small{ display:block; font-family:Inter; font-style:normal; letter-spacing:.28em; text-transform:uppercase;
+      color:var(--ash); font-size:clamp(.6rem,1.6vw,.72rem); margin-top:1rem; }
+    .big{ font-family:"Cormorant Garamond",serif; font-weight:400; font-size:clamp(2.4rem,9vw,6rem); line-height:1; }
+    .big .em{ color:var(--gold); font-style:italic; }
+
+    /* CTA */
+    .cta{ display:flex; flex-direction:column; align-items:center; gap:1.6rem; }
+    .cta .brand{ font-family:"Cormorant Garamond",serif; letter-spacing:.2em; font-size:clamp(1.6rem,6vw,2.6rem); }
+    .cta .brand b{ color:var(--gold); font-weight:500; } .cta .brand span{ color:var(--ash); font-size:.5em; letter-spacing:.35em; }
+    .cta a{ text-decoration:none; border:1px solid var(--gold); color:var(--goldlt); background:rgba(201,162,39,.08);
+      padding:1rem 2.4rem; letter-spacing:.22em; text-transform:uppercase; font-size:clamp(.72rem,2vw,.82rem);
+      border-radius:2px; transition:background .4s,color .4s,box-shadow .4s; }
+    .cta a:hover{ background:var(--gold); color:var(--ink); box-shadow:0 14px 44px -14px rgba(201,162,39,.7); }
+    .cta .sub{ color:var(--ash); letter-spacing:.06em; font-size:clamp(.7rem,1.9vw,.85rem); }
+
+    /* persistent brand chip + controls */
+    .chip{ position:fixed; top:1.1rem; left:1.2rem; z-index:5; font-family:"Cormorant Garamond",serif; letter-spacing:.18em; font-size:1rem; opacity:.9; }
+    .chip b{ color:var(--gold); } .chip span{ color:var(--ash); font-size:.6rem; letter-spacing:.3em; }
+    #bar{ position:fixed; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.08); z-index:5; }
+    #bar i{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--goldlt)); box-shadow:0 0 12px rgba(201,162,39,.6); }
+    #play{ position:fixed; bottom:1rem; right:1.2rem; z-index:6; width:44px; height:44px; border-radius:50%;
+      border:1px solid rgba(255,255,255,.22); background:rgba(10,8,7,.4); color:var(--ivory); cursor:pointer;
+      font-size:.9rem; backdrop-filter:blur(6px); transition:.3s; }
+    #play:hover{ border-color:var(--gold); color:var(--gold); }
+    @media (prefers-reduced-motion: reduce){ .bg .ken{ animation:none; } #dust{ display:none; } }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="bg bg0"><div class="ken"></div></div>
+    <div class="bg bg1"><div class="ken"></div></div>
+    <div class="bg bg2"><div class="ken"></div></div>
+    <div class="bg bg3"><div class="ken"></div></div>
+
+    <div class="frame f1"><div class="canvasart"></div></div>
+    <div class="frame f2"><div class="canvasart"></div></div>
+    <div class="frame f3"><div class="canvasart"></div></div>
+
+    <canvas id="dust"></canvas>
+    <div class="sweep" id="sweep"></div>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+
+    <div id="reel">
+      <!-- Scene 1: opening kicker -->
+      <div class="beat" data-b="kick"><p class="kick">A Home for New Collectors</p></div>
+
+      <!-- Scene 2: hero headline, word by word -->
+      <div class="beat" data-b="head">
+        <h1 class="head">
+          <span class="w" data-w="0">Your</span> <span class="w" data-w="1">first</span> <span class="w" data-w="2">piece</span><br>
+          <span class="w" data-w="3">is</span> <span class="w em" data-w="4">closer</span> <span class="w" data-w="5">than</span><br>
+          <span class="w" data-w="6">you</span> <span class="w" data-w="7">think.</span>
+        </h1>
+      </div>
+
+      <!-- Scene 3: value beats -->
+      <div class="beat" data-b="v1"><p class="value">Discover emerging artists.<small>Voices before the world catches on</small></p></div>
+      <div class="beat" data-b="v2"><p class="value">Original works, fairly priced.<small>Real art — not prints, not hype</small></p></div>
+      <div class="beat" data-b="v3"><p class="value">Guided every step.<small>No jargon · no pressure · just help</small></p></div>
+
+      <!-- Scene 4: turn -->
+      <div class="beat" data-b="big"><p class="big">Start your <span class="em">collection.</span></p></div>
+
+      <!-- Scene 5: CTA -->
+      <div class="beat" data-b="cta">
+        <div class="cta">
+          <div class="brand"><b>RED SHAE</b> <span>GALLERY</span></div>
+          <a href="tour.html">Step inside the gallery →</a>
+          <p class="sub">Browse the collection · Meet the artists · Take one home</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chip"><b>RED SHAE</b> <span>GALLERY</span></div>
+  <div id="bar"><i></i></div>
+  <button id="play" aria-label="Pause / play">❚❚</button>
+
+  <script>
+  const DUR = 19.0;                       // seconds per loop
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+
+  // envelope: 0→1 fade in over `fi`, hold, fade out over `fo`
+  function env(t, a, b, fi=0.65, fo=0.65){
+    if (t < a || t > b) return 0;
+    return Math.min(1, (t-a)/fi, (b-t)/fo);
+  }
+  const ease = x => x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+
+  // ---- timeline (seconds) ----
+  const BEATS = {
+    kick: [0.4, 3.4],
+    head: [2.7, 7.2],
+    v1:   [7.3, 9.7],
+    v2:   [9.8, 12.2],
+    v3:   [12.3, 14.7],
+    big:  [14.9, 17.1],
+    cta:  [17.2, 19.0],   // holds through the loop seam
+  };
+  const HEAD_WORDS = 8, HEAD_START = 3.0, HEAD_STAGGER = 0.18;
+
+  // ---- background crossfades (overlapping) ----
+  const BG = [
+    { el:".bg0", a:0.0,  b:7.6 },
+    { el:".bg1", a:6.8,  b:14.9 },
+    { el:".bg2", a:7.2,  b:15.1 },   // gold-ish tones behind value beats
+    { el:".bg3", a:14.2, b:19.0 },
+  ];
+  // frames appear mostly behind the value beats
+  const FRAMES = [
+    { el:".f1", a:6.9,  b:12.6 },
+    { el:".f2", a:8.0,  b:13.8 },
+    { el:".f3", a:9.6,  b:14.6 },
+  ];
+
+  const beatEls = {}; $$(".beat").forEach(e => beatEls[e.dataset.b] = e);
+  const words = $$(".head .w");
+  const barI = $("#bar i");
+  const sweep = $("#sweep");
+
+  function frame(t){
+    // beats
+    for (const k in BEATS){
+      const [a,b] = BEATS[k];
+      const o = env(t, a, b);
+      const el = beatEls[k];
+      el.style.opacity = o;
+      // gentle drift up as it lives
+      const p = (b-t) < 0.7 ? 1 : (t-a) < 0.7 ? 0 : 0.5;
+      const y = (1-o) * (t < (a+b)/2 ? 26 : -18);
+      el.style.transform = `translateY(${y.toFixed(1)}px)`;
+    }
+    // headline words (only while head beat is on)
+    const headOn = t >= BEATS.head[0] && t <= BEATS.head[1];
+    words.forEach((w,i)=>{
+      const s = HEAD_START + i*HEAD_STAGGER;
+      const wo = headOn ? Math.min(1, Math.max(0, (t - s)/0.55)) : env(t, BEATS.head[0], BEATS.head[1]);
+      const e = ease(wo);
+      w.style.opacity = headOn ? e : (beatEls.head.style.opacity);
+      w.style.transform = `translateY(${((1-e)*40).toFixed(1)}px)`;
+      w.style.filter = `blur(${((1-e)*6).toFixed(1)}px)`;
+    });
+    // gold sweep across the headline once
+    const sw = env(t, 4.6, 6.4, 0.1, 0.1);
+    sweep.style.opacity = sw ? 1 : 0;
+    sweep.style.transform = `translateX(${(-40 + ((t-4.6)/1.8)*180).toFixed(1)}vw)`;
+
+    // backgrounds
+    BG.forEach(g=>{ document.querySelector(g.el).style.opacity = env(t, g.a, g.b, 1.1, 1.1); });
+    FRAMES.forEach((g,i)=>{
+      const o = env(t, g.a, g.b, 0.9, 0.9);
+      const el = document.querySelector(g.el);
+      el.style.opacity = o * 0.9;
+      const drift = Math.sin((t + i*2)*0.5) * 10;
+      const base = g.el===".f3" ? "translateX(-50%) " : "";
+      el.style.transform = `${base}translateY(${drift.toFixed(1)}px)`;
+    });
+
+    barI.style.width = ((t/DUR)*100).toFixed(2) + "%";
+  }
+
+  // ---- dust motes ----
+  (function dust(){
+    const c = $("#dust"), x = c.getContext("2d"); let w,h,m=[];
+    const N = innerWidth < 768 ? 26 : 54;
+    function rs(){ w=c.width=innerWidth*devicePixelRatio; h=c.height=innerHeight*devicePixelRatio;
+      c.style.width=innerWidth+"px"; c.style.height=innerHeight+"px"; }
+    function sp(){ m=Array.from({length:N},()=>({x:Math.random()*w,y:Math.random()*h,
+      r:(Math.random()*1.5+.4)*devicePixelRatio, vx:(Math.random()-.5)*.16*devicePixelRatio,
+      vy:(Math.random()-.5)*.12*devicePixelRatio, a:Math.random()*.5+.1, tw:Math.random()*.02+.005, t:Math.random()*6.28})); }
+    function loop(){ x.clearRect(0,0,w,h);
+      for(const p of m){ p.x+=p.vx; p.y+=p.vy; p.t+=p.tw;
+        if(p.x<0)p.x=w; if(p.x>w)p.x=0; if(p.y<0)p.y=h; if(p.y>h)p.y=0;
+        x.beginPath(); x.arc(p.x,p.y,p.r,0,6.28);
+        x.fillStyle=`rgba(201,162,39,${(p.a*(0.6+0.4*Math.sin(p.t))).toFixed(3)})`;
+        x.shadowBlur=6*devicePixelRatio; x.shadowColor="rgba(232,212,155,.5)"; x.fill(); }
+      requestAnimationFrame(loop); }
+    rs(); sp(); if(!reduce) loop(); addEventListener("resize",()=>{ rs(); sp(); });
+  })();
+
+  // ---- clock / play-pause ----
+  let start = performance.now(), paused = false, pauseAt = 0;
+  function tick(now){
+    if (!paused){ const t = ((now - start)/1000) % DUR; frame(t); }
+    requestAnimationFrame(tick);
+  }
+  if (reduce){ frame(17.9); }                 // static: show the CTA
+  else requestAnimationFrame(tick);
+
+  $("#play").addEventListener("click", ()=>{
+    const btn = $("#play");
+    if (!paused){ paused = true; pauseAt = (performance.now()-start); btn.textContent="▶"; }
+    else { paused = false; start = performance.now()-pauseAt; btn.textContent="❚❚"; }
+  });
+  </script>
+</body>
+</html>
