@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Red Shae Gallery — Modern Pavilion (3D Walkthrough)</title>
+  <meta name="description" content="Glide through a modern luxury gallery pavilion — glossy floors, sculptural light, floor-to-ceiling glass. Swipe to walk, tap the works for details." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --gold:#c9a227; --goldlt:#e8d49b; --ink:#0d0f12; }
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html,body{ height:100%; background:#c9ced4; overflow:hidden; font-family:Inter,system-ui,sans-serif; color:#fff; }
+    #c{ position:fixed; inset:0; display:block; touch-action:none; }
+
+    /* overlay UI — light/glass to match the bright architecture */
+    .topbar{ position:fixed; top:0; left:0; right:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+      padding:1rem 1.2rem; pointer-events:none; text-shadow:0 1px 12px rgba(0,0,0,.35); }
+    .brand{ font-family:"Cormorant Garamond",serif; letter-spacing:.2em; font-size:1.1rem; }
+    .brand b{ color:var(--goldlt); font-weight:500; } .brand span{ opacity:.85; font-size:.62rem; letter-spacing:.35em; }
+    .space{ font-family:"Cormorant Garamond",serif; font-style:italic; color:#fff; font-size:.95rem; opacity:.9; }
+
+    .controls{ position:fixed; bottom:0; left:0; right:0; z-index:5; display:flex; flex-direction:column; align-items:center;
+      gap:.7rem; padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom)); pointer-events:none; }
+    .controls > *{ pointer-events:auto; }
+    .row{ display:flex; align-items:center; gap:.8rem; }
+    .btn{ appearance:none; border:1px solid rgba(255,255,255,.55); background:rgba(20,24,28,.28); color:#fff;
+      border-radius:9999px; width:48px; height:48px; font-size:1.15rem; cursor:pointer; display:flex; align-items:center;
+      justify-content:center; backdrop-filter:blur(8px); transition:.3s; }
+    .btn:hover{ border-color:var(--goldlt); color:var(--goldlt); }
+    .tour{ appearance:none; border:1px solid var(--goldlt); background:rgba(201,162,39,.18); color:#fff; padding:.8rem 1.6rem;
+      border-radius:9999px; letter-spacing:.18em; text-transform:uppercase; font-size:.72rem; cursor:pointer; backdrop-filter:blur(8px);
+      transition:.3s; white-space:nowrap; }
+    .tour:hover{ background:var(--gold); color:var(--ink); border-color:var(--gold); }
+    .hint{ font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; opacity:.85; text-shadow:0 1px 10px rgba(0,0,0,.4); text-align:center; }
+    .prog{ width:min(360px,70vw); height:3px; background:rgba(255,255,255,.28); border-radius:3px; overflow:hidden; }
+    .prog i{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--goldlt)); }
+
+    /* artwork detail panel */
+    #art{ position:fixed; top:0; right:0; height:100%; width:min(360px,86vw); z-index:8; background:rgba(14,16,19,.82);
+      backdrop-filter:blur(16px); border-left:1px solid rgba(255,255,255,.14); padding:2rem 1.5rem;
+      transform:translateX(105%); transition:transform .5s cubic-bezier(.16,1,.3,1); overflow-y:auto; }
+    #art.open{ transform:none; }
+    #art .x{ position:absolute; top:1rem; right:1rem; width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.25);
+      background:none; color:#fff; cursor:pointer; transition:.3s; } #art .x:hover{ border-color:var(--gold); color:var(--gold); transform:rotate(90deg); }
+    #art .yr{ color:var(--goldlt); letter-spacing:.3em; text-transform:uppercase; font-size:.68rem; }
+    #art h3{ font-family:"Cormorant Garamond",serif; font-weight:300; font-size:1.9rem; margin:.4rem 0 .1rem; }
+    #art .who{ color:#b9bcc2; font-style:italic; margin-bottom:1.2rem; }
+    #art .r{ display:flex; justify-content:space-between; gap:1rem; border-bottom:1px solid rgba(255,255,255,.12); padding:.55rem 0; font-size:.82rem; }
+    #art dt{ color:#9aa0a8; text-transform:uppercase; letter-spacing:.1em; font-size:.66rem; }
+    #art .desc{ color:#c3c7cd; line-height:1.7; font-size:.9rem; margin-top:1.2rem; }
+
+    /* loading + fallback */
+    #load{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:radial-gradient(ellipse at center,#20252b,#0c0e11); transition:opacity .8s ease; color:#fff; text-align:center; padding:2rem; }
+    #load.hide{ opacity:0; pointer-events:none; }
+    #load .brand{ font-size:1.6rem; margin-bottom:1.4rem; } #load .sp{ width:34px; height:34px; border:2px solid rgba(255,255,255,.25);
+      border-top-color:var(--goldlt); border-radius:50%; animation:spin 1s linear infinite; } @keyframes spin{ to{ transform:rotate(360deg);} }
+    #load small{ color:#9aa0a8; margin-top:1.2rem; letter-spacing:.1em; font-size:.72rem; }
+    #fallback{ display:none; position:fixed; inset:0; z-index:30; background:#0c0e11; color:#fff; align-items:center; justify-content:center;
+      text-align:center; padding:2rem; flex-direction:column; gap:1rem; }
+    #fallback a{ color:var(--goldlt); }
+  </style>
+
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="topbar">
+    <div class="brand"><b>RED SHAE</b> <span>GALLERY</span></div>
+    <div class="space">The Modern Pavilion</div>
+  </div>
+
+  <div class="controls">
+    <div class="prog"><i id="prog"></i></div>
+    <div class="row">
+      <button class="btn" id="back" title="Back">‹</button>
+      <button class="tour" id="auto">❚❚ Auto-tour</button>
+      <button class="btn" id="fwd" title="Forward">›</button>
+    </div>
+    <div class="hint">Swipe up / scroll to glide forward · drag sideways to look · tap a work for details</div>
+  </div>
+
+  <aside id="art">
+    <button class="x" id="artX">✕</button>
+    <div class="yr" id="aYr"></div>
+    <h3 id="aTitle"></h3>
+    <p class="who" id="aWho"></p>
+    <dl>
+      <div class="r"><dt>Medium</dt><dd id="aMed"></dd></div>
+      <div class="r"><dt>Dimensions</dt><dd id="aDim"></dd></div>
+    </dl>
+    <p class="desc" id="aDesc"></p>
+  </aside>
+
+  <div id="load">
+    <div class="brand" style="font-family:'Cormorant Garamond',serif;letter-spacing:.2em"><b style="color:#e8d49b">RED SHAE</b> GALLERY</div>
+    <div class="sp"></div>
+    <small>Entering the pavilion…</small>
+  </div>
+  <div id="fallback">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem">Your browser can’t run the 3D walkthrough.</div>
+    <div>Try a current version of Safari or Chrome. Meanwhile, explore the
+      <a href="tour.html">360° tour</a> or the <a href="red-shae-gallery-preview.html">gallery site</a>.</div>
+  </div>
+
+  <script type="module">
+  import * as THREE from "three";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+  import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+  /* ---------------- catalog (labels the artworks) ---------------- */
+  const ART = [
+    {t:"Crimson Threshold",a:"Élise Marchand",y:"2024",m:"Oil & gold leaf on linen",d:"180 × 140 cm",c:0x7a1f33,desc:"A doorway dissolving into deep burgundy shadow — a threshold the eye may cross but the body cannot."},
+    {t:"Gilded Silence",a:"Tomás Vega",y:"2023",m:"Mixed media on panel",d:"120 × 120 cm",c:0xc9a227,desc:"Flecks of gold suspended in near-black resin. A meditation on presence and absence."},
+    {t:"Ivory Requiem",a:"Hana Okafor",y:"2025",m:"Acrylic and ash on canvas",d:"150 × 200 cm",c:0xe8e2d5,desc:"A field of bone-white broken by a single breath of charcoal — the quiet after a last note."},
+    {t:"The Velvet Hour",a:"Élise Marchand",y:"2024",m:"Oil on canvas",d:"100 × 80 cm",c:0x3a2a4a,desc:"Dusk rendered as fabric; a thin seam of gold marks where day was last seen."},
+    {t:"Burnished Idol",a:"Rafael Sørensen",y:"2022",m:"Bronze pigment on board",d:"90 × 70 cm",c:0xb08d57,desc:"A form between figure and vessel, worked until it holds light like aged metal."},
+    {t:"Wine-Dark Sea",a:"Hana Okafor",y:"2023",m:"Oil and wax on linen",d:"160 × 220 cm",c:0x2a2f52,desc:"Deep red and indigo churn beneath a waxed surface, tilting like a night horizon."},
+    {t:"Reliquary No. 9",a:"Rafael Sørensen",y:"2024",m:"Gold leaf and tar on panel",d:"110 × 90 cm",c:0x8a6d12,desc:"An altar without a saint — the holy figure replaced by a slow black pour."},
+    {t:"Last Light, Interior",a:"Tomás Vega",y:"2025",m:"Oil on board",d:"75 × 95 cm",c:0x6e4a2a,desc:"A single window admits the day’s final gold into a room of deep umber."},
+    {t:"Ash Madonna",a:"Hana Okafor",y:"2024",m:"Charcoal and gesso on canvas",d:"200 × 130 cm",c:0xd8d2c6,desc:"A figure emerging from and returning to dust in the same gesture."},
+    {t:"Nocturne, Folded",a:"Élise Marchand",y:"2025",m:"Oil on linen",d:"140 × 110 cm",c:0x412033,desc:"Night compressed into cloth — a study in how little light a painting needs."},
+  ];
+
+  const canvas = document.getElementById("c");
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:"high-performance" });
+  } catch(e){ document.getElementById("fallback").style.display="flex"; document.getElementById("load").style.display="none"; throw e; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcfd6dd);
+  scene.fog = new THREE.Fog(0xd2d8de, 46, 120);
+
+  const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.1, 400);
+  camera.rotation.order = "YXZ";
+
+  // image-based lighting for realistic reflections
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+  // ---- dimensions ----
+  const HALF_W = 8, LEN = 62, H = 9, Z0 = 26, Z1 = -26;
+
+  // ---- glossy floor ----
+  const floorMat = new THREE.MeshStandardMaterial({ color:0xd7d5d1, roughness:0.08, metalness:0.0, envMapIntensity:1.35 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W*2, LEN), floorMat);
+  floor.rotation.x = -Math.PI/2; scene.add(floor);
+
+  // ---- ceiling ----
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W*2, LEN),
+    new THREE.MeshStandardMaterial({ color:0xeceef0, roughness:0.9 }));
+  ceil.rotation.x = Math.PI/2; ceil.position.y = H; scene.add(ceil);
+
+  // ---- walls ----
+  const wallMat = new THREE.MeshStandardMaterial({ color:0xf3f2ef, roughness:0.85, metalness:0.0 });
+  function wall(w,h,x,y,z,ry){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), wallMat); m.position.set(x,y,z); m.rotation.y=ry; scene.add(m); return m; }
+  wall(LEN, H, -HALF_W, H/2, 0, Math.PI/2);   // left wall (faces +x)
+  wall(LEN, H,  HALF_W, H/2, 0, -Math.PI/2);   // right wall (faces -x)
+  wall(HALF_W*2, H, 0, H/2, Z0+5, Math.PI);    // entrance wall behind start
+
+  // ---- far glass wall + bright sky ----
+  const sky = (() => {
+    const cv = document.createElement("canvas"); cv.width=8; cv.height=256; const g=cv.getContext("2d");
+    const grd=g.createLinearGradient(0,0,0,256); grd.addColorStop(0,"#eaf1f7"); grd.addColorStop(0.55,"#cfe0ee"); grd.addColorStop(1,"#e9edf0");
+    g.fillStyle=grd; g.fillRect(0,0,8,256); const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+  })();
+  const skyPlane = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W*2+8, H+6),
+    new THREE.MeshBasicMaterial({ map:sky }));
+  skyPlane.position.set(0, H/2, Z1-6); scene.add(skyPlane);
+  // glass + black mullions on far wall
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W*2, H),
+    new THREE.MeshPhysicalMaterial({ color:0xffffff, roughness:0.05, metalness:0, transmission:0.0, transparent:true, opacity:0.12 }));
+  glass.position.set(0, H/2, Z1-0.2); glass.rotation.y=Math.PI; scene.add(glass);
+  const mullMat = new THREE.MeshStandardMaterial({ color:0x1b1e22, roughness:0.6, metalness:0.3 });
+  for (let i=-2;i<=2;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.16,H,0.16), mullMat); b.position.set(i*HALF_W/2.2, H/2, Z1-0.1); scene.add(b); }
+  const midRail=new THREE.Mesh(new THREE.BoxGeometry(HALF_W*2,0.16,0.16),mullMat); midRail.position.set(0,H*0.55,Z1-0.1); scene.add(midRail);
+
+  // ---- glowing elements (picked up by bloom) ----
+  const glow = [];
+  // LED cove strips along base of both side walls
+  const ledMat = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xfff0d8, emissiveIntensity:2.4, roughness:1 });
+  [-HALF_W+0.06, HALF_W-0.06].forEach(x=>{ const s=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,LEN), ledMat); s.position.set(x,0.12,0); scene.add(s); });
+  // recessed ceiling downlights
+  const dlMat = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:2.6, roughness:1 });
+  for (let z=Z0-4; z>Z1+2; z-=6){ for (const x of [-3.2,3.2]){ const d=new THREE.Mesh(new THREE.CircleGeometry(0.16,20), dlMat);
+    d.rotation.x=Math.PI/2; d.position.set(x,H-0.02,z); scene.add(d); } }
+  // sculptural ring pendants (like the reference chandeliers) in the double-height entry
+  const pendMat = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xfff2d6, emissiveIntensity:2.2, roughness:0.35, metalness:0.2 });
+  [[-3,18],[3,18],[0,10]].forEach(([x,z],i)=>{
+    const k=new THREE.Mesh(new THREE.TorusKnotGeometry(0.85,0.11,140,20,2,3), pendMat);
+    k.position.set(x, 6.4-(i===2?0.3:0), z); scene.add(k); glow.push(k);
+    const pl=new THREE.PointLight(0xfff0d8, 12, 22, 2); pl.position.set(x,6.2,z); scene.add(pl);
+  });
+
+  // soft fill lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8bcc0, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(-6, 12, -14); scene.add(key);
+
+  // ---- artworks on the walls ----
+  const pickables = [];
+  const frameMat = new THREE.MeshStandardMaterial({ color:0x14161a, roughness:0.5, metalness:0.2 });
+  function makeCanvasTex(hex){
+    const cv=document.createElement("canvas"); cv.width=256; cv.height=256; const g=cv.getContext("2d");
+    const col="#"+hex.toString(16).padStart(6,"0");
+    const grd=g.createRadialGradient(128,96,20,128,128,190); grd.addColorStop(0, shade(col,28)); grd.addColorStop(1, shade(col,-30));
+    g.fillStyle=grd; g.fillRect(0,0,256,256);
+    const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+  }
+  function shade(hex,amt){ const n=parseInt(hex.slice(1),16); let r=(n>>16)+amt,gr=((n>>8)&255)+amt,b=(n&255)+amt;
+    r=Math.max(0,Math.min(255,r));gr=Math.max(0,Math.min(255,gr));b=Math.max(0,Math.min(255,b));
+    return "#"+((r<<16)|(gr<<8)|b).toString(16).padStart(6,"0"); }
+
+  function hangArt(index, x, z, ry){
+    const info = ART[index % ART.length];
+    const w = 2.0 + (index%3)*0.35, h = 1.5 + (index%2)*0.4;
+    const grp = new THREE.Group(); grp.position.set(x, 3.0, z); grp.rotation.y = ry;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(w+0.18, h+0.18, 0.08), frameMat); grp.add(frame);
+    const canvasMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshStandardMaterial({ map:makeCanvasTex(info.c), roughness:0.55, emissive:new THREE.Color(info.c), emissiveIntensity:0.08 }));
+    canvasMesh.position.z = 0.05; canvasMesh.userData.art = info; grp.add(canvasMesh);
+    // a little picture light
+    const pl=new THREE.PointLight(0xffffff, 3.2, 6, 2); pl.position.set(0, h/2+0.5, 0.7); grp.add(pl);
+    scene.add(grp); pickables.push(canvasMesh);
+  }
+  // place along both walls
+  const zSlots = [18, 10, 2, -6, -14, -22];
+  zSlots.forEach((z,i)=>{ hangArt(i*2,   -HALF_W+0.12, z,  Math.PI/2);  });   // left wall, faces +x
+  zSlots.forEach((z,i)=>{ hangArt(i*2+1,  HALF_W-0.12, z, -Math.PI/2);  });   // right wall, faces -x
+
+  // ---- post-processing (bloom) ----
+  let composer = null;
+  try {
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.85);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+  } catch(e){ composer = null; }
+
+  // ---------------- navigation ----------------
+  let targetZ = Z0, curZ = Z0, yaw = 0, pitch = 0, auto = true, autoDir = -1;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+  // pointer input
+  let down=false, lx=0, ly=0, sx=0, sy=0, mode=null, moved=false;
+  canvas.addEventListener("pointerdown", e=>{ down=true; lx=sx=e.clientX; ly=sy=e.clientY; mode=null; moved=false; });
+  canvas.addEventListener("pointermove", e=>{
+    if(!down) return; const dx=e.clientX-lx, dy=e.clientY-ly;
+    if(!mode && Math.hypot(e.clientX-sx, e.clientY-sy)>7){ mode = Math.abs(e.clientY-sy) > Math.abs(e.clientX-sx) ? "move" : "look"; auto=false; }
+    if(mode==="move"){ targetZ = clamp(targetZ + dy*0.05, Z1, Z0); }        // swipe up (dy<0) → forward
+    else if(mode==="look"){ yaw = clamp(yaw - dx*0.004, -0.95, 0.95); pitch = clamp(pitch - dy*0.003, -0.28, 0.28); }
+    if(Math.hypot(e.clientX-sx, e.clientY-sy)>9) moved=true;
+    lx=e.clientX; ly=e.clientY;
+  });
+  canvas.addEventListener("pointerup", e=>{ if(down && !moved) pick(e); down=false; });
+  canvas.addEventListener("pointercancel", ()=>{ down=false; });
+  canvas.addEventListener("wheel", e=>{ e.preventDefault(); auto=false; targetZ = clamp(targetZ + (e.deltaY>0?-1.6:1.6), Z1, Z0); }, {passive:false});
+
+  document.getElementById("fwd").onclick = ()=>{ auto=false; targetZ=clamp(targetZ-6,Z1,Z0); };
+  document.getElementById("back").onclick = ()=>{ auto=false; targetZ=clamp(targetZ+6,Z1,Z0); };
+  const autoBtn=document.getElementById("auto");
+  autoBtn.onclick = ()=>{ auto=!auto; autoBtn.textContent = auto ? "❚❚ Auto-tour" : "▶ Auto-tour";
+    if(auto){ autoDir = curZ>Z1+1 ? -1 : 1; } };
+
+  // raycast to open artwork
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function pick(e){
+    ndc.x = (e.clientX/innerWidth)*2-1; ndc.y = -(e.clientY/innerHeight)*2+1;
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(pickables, false)[0];
+    if(hit && hit.object.userData.art) openArt(hit.object.userData.art);
+  }
+  const $=id=>document.getElementById(id);
+  function openArt(a){ $("aYr").textContent=a.y; $("aTitle").textContent=a.t; $("aWho").textContent=a.a;
+    $("aMed").textContent=a.m; $("aDim").textContent=a.d; $("aDesc").textContent=a.desc; $("art").classList.add("open"); }
+  $("artX").onclick=()=>$("art").classList.remove("open");
+
+  // ---------------- resize ----------------
+  addEventListener("resize", ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight); if(composer) composer.setSize(innerWidth,innerHeight); });
+
+  // ---------------- loop ----------------
+  const prog=document.getElementById("prog");
+  let last=performance.now();
+  function animate(now){
+    const dt=Math.min(0.05,(now-last)/1000); last=now;
+    if(auto){ targetZ += autoDir*2.4*dt; if(targetZ<=Z1){targetZ=Z1;autoDir=1;} if(targetZ>=Z0){targetZ=Z0;autoDir=-1;} }
+    curZ += (targetZ-curZ)*Math.min(1,dt*4);
+    const bob = Math.sin(now*0.0016)*0.03;
+    camera.position.set(0, 1.62+bob, curZ);
+    camera.rotation.y = yaw; camera.rotation.x = pitch;
+    prog.style.width = (((Z0-curZ)/(Z0-Z1))*100).toFixed(1)+"%";
+    if(composer) composer.render(); else renderer.render(scene,camera);
+    requestAnimationFrame(animate);
+  }
+  // warm up then reveal
+  renderer.compile(scene, camera);
+  requestAnimationFrame(animate);
+  setTimeout(()=>{ document.getElementById("load").classList.add("hide"); }, 650);
+  </script>
+
+  <script>
+    // graceful message if the browser lacks ES-module import maps
+    if (!(HTMLScriptElement.supports && HTMLScriptElement.supports("importmap"))) {
+      document.getElementById("fallback").style.display = "flex";
+      document.getElementById("load").style.display = "none";
+    }
+  </script>
+</body>
+</html>
