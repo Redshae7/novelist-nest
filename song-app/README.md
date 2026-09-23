@@ -35,18 +35,61 @@ like UniqueSong ($60–$200, 3–7 day delivery, pay-before-you-see-anything):
 ## Files
 
 ```
-public/index.html      landing + wizard + lyric approval + checkout
+public/index.html      landing + wizard + lyric approval + checkout + comp-code box
 public/gift.html       delivery + producing-progress + gift/share page
+public/admin.html      owner-only console for influencer comp codes
 public/terms.html      ToS incl. refunds, license, AI disclosure
 public/privacy.html    privacy policy
 netlify/lib/core.mjs   shared: blobs, rate limits, render enqueue/retry, gating
+netlify/lib/promo.mjs  comp-code generation, redemption, admin auth
 netlify/functions/song.mjs             /api/song (lyrics/revise/edit/status/gift/lead/track/attach)
 netlify/functions/song-audio.mjs       /api/song-audio (serves rendered tracks from Blobs, Range-aware)
 netlify/functions/create-checkout.mjs  /api/create-checkout
 netlify/functions/stripe-webhook.mjs   /api/stripe-webhook (HMAC-verified; enqueues render)
 netlify/functions/verify-payment.mjs   /api/verify-payment (redirect race; enqueues render)
+netlify/functions/redeem.mjs           /api/redeem (comp code → unlocks one song)
+netlify/functions/promo-admin.mjs      /api/promo-admin (create/list/revoke codes; ADMIN_SECRET)
 supabase/functions/render-song/index.ts  stateless renderer (ElevenLabs Music API), deployed to Supabase
 ```
+
+## Influencer / press comp codes
+
+A comp code is a one-time key that unlocks one song **for free** — the same
+product a paying customer gets (two versions, downloads, gift page). Built for
+sending with a press packet or a collab DM.
+
+**To create codes:** set `ADMIN_SECRET` in Netlify (any random string, 12+
+characters), then open `https://<your-site>/admin.html` and enter it. Pick who
+the codes are for, how many, and whether they expire. You get back both the
+raw codes and ready-to-send share links.
+
+**What the influencer does:** either open the share link
+(`https://<your-site>/?code=HEART-XXXX-XXXX` — the code fills itself in) or
+write a song normally and click **"Have a code? Enter it here"** on the buy
+card. Stripe is skipped entirely and production starts immediately.
+
+**How it stays safe:**
+
+- Codes exist only if you created one — there is no self-service path, and
+  `/api/promo-admin` returns 503 until `ADMIN_SECRET` is set (no default
+  password, no unauthenticated mode; the secret is compared in constant time).
+- Redemption attempts are rate-limited to 8/hour per IP, so the ~1.1 trillion
+  code space can't be brute-forced.
+- A code is consumed only after the song is confirmed to exist and be unpaid,
+  so a mistyped request never burns an influencer's one-time code. Re-applying
+  the same code to the same song is a no-op, not a second use.
+- Every redemption is recorded (song, time, email), and the last use is
+  re-checked after writing, so two songs racing for one use can't both win.
+- Revoke any code from `/admin.html` and it stops working immediately.
+
+`admin.html` is `noindex` and holds no secret of its own — every action is
+authorized server-side, so the page is useless to anyone without the password.
+
+**Percentage discounts** (e.g. 20% off for a follower audience) are *not* this
+system — use Stripe's own promotion codes in the Stripe Dashboard. Checkout
+already sends `allow_promotion_codes`, so they work at the payment step with
+no code changes. Use comp codes for 100%-free, Stripe promotion codes for
+everything else.
 
 ## Environment variables
 
@@ -66,6 +109,10 @@ supabase/functions/render-song/index.ts  stateless renderer (ElevenLabs Music AP
 | `PRICE_DELUXE_CENTS` | | `999` | Keep in sync with `PRICE_DELUXE` in index.html. |
 | `LYRICS_PER_HOUR` | | `10` | Per-IP free lyric-writing limit. |
 | `FREE_LYRIC_REVISIONS` | | `3` | Free AI rewrites per song. |
+| `ADMIN_SECRET` | ✅ for comp codes | — | Password for `/admin.html`. 12+ characters; without it the admin API refuses every request. |
+| `PROMO_PREFIX` | | `HEART` | Prefix on generated codes, e.g. `HEART-AB12-CD34`. |
+| `REDEEM_ATTEMPTS_PER_HOUR` | | `8` | Per-IP comp-code attempt limit (anti-brute-force). |
+| `ADMIN_ATTEMPTS_PER_HOUR` | | `60` | Per-IP limit on admin API calls. |
 
 ## Setup
 

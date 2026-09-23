@@ -170,6 +170,19 @@
   .guarantee{display:flex;gap:12px;background:var(--good-soft);border-radius:13px;padding:14px 16px;margin-top:16px;font-size:13.5px;color:#2e5c48}
   .guarantee .gi{font-size:20px}
 
+  /* promo / comp code */
+  .promotoggle{display:block;margin:12px auto 0;background:none;border:none;color:var(--muted);font-size:12.5px;
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .promotoggle:hover{color:var(--accent-dk)}
+  .promobox{display:none;margin-top:12px;border:1.5px dashed var(--line);border-radius:13px;padding:14px;background:#fff}
+  .promobox.show{display:block}
+  .promobox .row2{display:flex;gap:8px}
+  .promobox .row2 input{flex:1;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .promobox .btn.small{flex-shrink:0}
+  .promook{display:flex;gap:10px;align-items:center;background:var(--good-soft);border-radius:13px;padding:14px 16px;
+    margin-top:12px;font-size:13.5px;color:#2e5c48}
+  .promook b{display:block}
+
   /* FAQ */
   .faq{margin-top:54px}
   .faq h2{text-align:center;font-size:28px;margin-bottom:18px}
@@ -373,6 +386,19 @@
       <div class="errbox" id="payErr"></div>
       <button class="btn" id="payBtn">🎧 Produce my song — <span id="payAmt">$24.99</span></button>
       <p class="paymeta">🔒 Secure checkout by Stripe · Apple Pay · Google Pay · Cards</p>
+      <button type="button" class="promotoggle" id="promoToggle">Have a code? Enter it here</button>
+      <div class="promobox" id="promoBox">
+        <div class="errbox" id="promoErr"></div>
+        <div class="row2">
+          <input type="text" id="promoCode" placeholder="HEART-XXXX-XXXX" maxlength="40"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false" />
+          <button class="btn small" id="promoGo">Apply</button>
+        </div>
+      </div>
+      <div class="promook" id="promoOk" style="display:none">
+        <span class="gi" style="font-size:20px">🎁</span>
+        <span><b>Code applied — your song is free.</b>Starting production now…</span>
+      </div>
       <div class="guarantee"><span class="gi">💛</span><span><b>Love-it guarantee.</b> Free rewrites &amp; re-production — and a full refund within 7 days if it still isn't right.</span></div>
     </div>
   </div>
@@ -552,6 +578,46 @@
       showErr($("payErr"),e.message);
     }
   };
+
+  // ---------- comp / influencer code ----------
+  $("promoToggle").onclick=function(){
+    var box=$("promoBox"),open=box.classList.toggle("show");
+    this.textContent=open?"Never mind — I'll pay":"Have a code? Enter it here";
+    if(open){$("promoCode").focus();track("promo_opened");}
+  };
+  async function applyPromo(){
+    if(!st.song){showErr($("promoErr"),"Write your song first, then apply your code.");return;}
+    if(editing){showErr($("promoErr"),"Save your lyric edits first (💾 Save my edits).");return;}
+    var code=$("promoCode").value.trim();
+    if(!code){showErr($("promoErr"),"Please enter your code.");return;}
+    var btn=$("promoGo");btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+    hideErr($("promoErr"));
+    try{
+      var r=await fetch("/api/redeem",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({songId:st.song.id,code:code,email:$("email").value.trim()})});
+      var d=await r.json();
+      if(!r.ok||!d.url)throw new Error(d.error||"That code could not be applied.");
+      $("promoBox").classList.remove("show");
+      $("promoToggle").style.display="none";
+      $("promoOk").style.display="flex";
+      $("payBtn").disabled=true;
+      window.location.href=d.url;
+    }catch(e){
+      btn.disabled=false;btn.textContent="Apply";
+      showErr($("promoErr"),e.message);
+    }
+  }
+  $("promoGo").onclick=applyPromo;
+  $("promoCode").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();applyPromo();}});
+
+  // A code can also arrive as a link: /?code=HEART-XXXX-XXXX
+  (function(){
+    var pre=new URLSearchParams(location.search).get("code");
+    if(!pre)return;
+    $("promoCode").value=pre;
+    $("promoBox").classList.add("show");
+    $("promoToggle").textContent="Never mind — I'll pay";
+  })();
 
   // ---------- resume after checkout cancel ----------
   (async function(){
